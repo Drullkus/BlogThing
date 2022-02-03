@@ -6,7 +6,7 @@ plugins {
 
 group = 'us.drullk'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 configurations {
     compileOnly {
@@ -19,13 +19,13 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-security'
+    //implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.session:spring-session-core'
+    //implementation 'org.springframework.session:spring-session-core'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
+    //testImplementation 'org.springframework.security:spring-security-test'
 }
 
 tasks.named('test') {
