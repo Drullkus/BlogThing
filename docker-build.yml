@@ -1,0 +1,21 @@
+# https://codefresh.io/docs/docs/learn-by-example/java/gradle/
+version: '0.0.1'
+stages:
+  - prepare
+  - build
+steps:
+  git_clone:
+    title: Cloning specified git repository...
+    stage: prepare
+    type: git-clone
+    repo: 'Drullkus/BlogThing'
+    revision: Docker-test
+    git: github
+  BuildingDockerImage:
+    title: Building Docker Image
+    stage: build
+    type: build
+    image_name: gradle-blog-app
+    working_directory: ./
+    tag: 'multi-stage'
+    dockerfile: build.dockerfile
