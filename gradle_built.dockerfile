@@ -6,5 +6,6 @@ RUN gradle build --no-daemon
 
 FROM openjdk:17-jdk-alpine
 RUN mkdir /app
+# Requires there to be one and only one *.jar FIXME make into a variable from lines above or in docker_compose.yml
 COPY --from=build /home/gradle/src/build/libs/*.jar /app/blog_app.jar
 ENTRYPOINT ["java","-jar","/app/blog_app.jar"]

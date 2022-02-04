@@ -1,9 +1,21 @@
 version: "3.8" # https://docs.docker.com/compose/compose-file/compose-file-v3/
+
 services:
   web:
     container_name: blogging-machine
     build:
       context: .
       dockerfile: gradle_built.dockerfile
+    # https://www.cloudbees.com/blog/ensuring-containers-are-always-running-with-dockers-restart-policy
+    # restart: on-failure # It will not restart on success-signalling error codes
     ports:
       - "8080:8080"
+    volumes:
+      - blogvolume:/tmp
+#    labels:
+#      us.drullk.what: "This is a label"
+
+volumes: # https://docs.docker.com/compose/compose-file/compose-file-v3/#volume-configuration-reference
+  blogvolume:
+    name: blogappstorage
+    external: false
