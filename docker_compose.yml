@@ -11,9 +11,9 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - blogvolume:/tmp
-#    labels:
-#      us.drullk.what: "This is a label"
+      - blogvolume:/tmp # placeholder FIXME actual directory
+    labels:
+      us.drullk.what: "This is a label"
 
 volumes: # https://docs.docker.com/compose/compose-file/compose-file-v3/#volume-configuration-reference
   blogvolume:
