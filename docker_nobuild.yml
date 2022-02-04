@@ -1,6 +1,7 @@
-version: "0.0.1"
+version: "3.8"
 services:
   web:
     build: .
+      dockerfile: default.dockerfile
     ports:
       - "8080:8080"
