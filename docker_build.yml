@@ -3,6 +3,6 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerbuild
+      dockerfile: docker_build.dockerfile
     ports:
       - "8080:8080"
