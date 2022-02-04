@@ -1,0 +1,9 @@
+version: "3.8" # https://docs.docker.com/compose/compose-file/compose-file-v3/
+services:
+  web:
+    container_name: blogging-machine
+    build:
+      context: .
+      dockerfile: gradle_built.dockerfile
+    ports:
+      - "8080:8080"

@@ -13,7 +13,7 @@ public class BlogApplication {
         return "Hello Docker World";
     }
 
-    public static void main(String[] args) {
+    public static void main(String... args) {
         SpringApplication.run(BlogApplication.class, args);
     }
 }
