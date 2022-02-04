@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.RestController;
 @SpringBootApplication
 @RestController
 public class BlogApplication {
-    @RequestMapping("/")
-    public String home() {
-        return "Hello from Volumed Docker World!";
+    @RequestMapping("/result")
+    public String defaultDocumentContents() {
+        return "Hello from a docker world built by Gradle!";
     }
 
     public static void main(String... args) {
