@@ -6,7 +6,7 @@ services:
     container_name: blogging-machine
     build:
       context: .
-#     dockerfile: gradle_built.dockerfile
+      dockerfile: gradle_built.dockerfile
 #   restart: on-failure # Makes it not restart the process on success-signalling error codes (https://www.cloudbees.com/blog/ensuring-containers-are-always-running-with-dockers-restart-policy)
     ports:
       - "8080:8080"
@@ -21,7 +21,7 @@ services:
       - source: db_password
         target: SPRING_DATASOURCE_PASSWORD
     volumes:
-      - blogvolume:/runtime # placeholder FIXME actual directory
+      - blogvolume # placeholder FIXME actual directory
   db:
     image: 'postgres:13.1-alpine'
     container_name: db
@@ -31,7 +31,7 @@ services:
       - source: db_password
         target: POSTGRES_PASSWORD
     volumes:
-      - blogvolume:/database # placeholder FIXME actual directory
+      - blogvolume # placeholder FIXME actual directory
 
 volumes: # https://docs.docker.com/compose/compose-file/compose-file-v3/#volume-configuration-reference
   blogvolume:
@@ -40,6 +40,6 @@ volumes: # https://docs.docker.com/compose/compose-file/compose-file-v3/#volume-
 
 secrets: # https://www.cloudsavvyit.com/12631/how-to-secure-sensitive-data-with-docker-compose-secrets/
   db_username: # File contents will be used as database username
-    file: ./secrets/username.txt
+    file: compose-postgres
   db_password: # File contents will be used as database password
-    file: ./secrets/password.txt
+    file: compose-postgres
