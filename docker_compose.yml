@@ -39,7 +39,7 @@ volumes: # https://docs.docker.com/compose/compose-file/compose-file-v3/#volume-
     external: false
 
 secrets: # https://www.cloudsavvyit.com/12631/how-to-secure-sensitive-data-with-docker-compose-secrets/
-  db_username:
+  db_username: # File contents will be used as database username
     file: ./secrets/username.txt
-  db_password:
+  db_password: # File contents will be used as database password
     file: ./secrets/password.txt

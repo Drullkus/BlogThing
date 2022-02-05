@@ -2,7 +2,7 @@
 FROM gradle:7.3.3-jdk17-alpine AS build
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
-RUN gradle build --no-daemon
+RUN gradle build --no-daemon --stacktrace
 
 FROM openjdk:17-jdk-alpine
 RUN mkdir /app
