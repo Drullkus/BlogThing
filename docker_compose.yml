@@ -6,7 +6,7 @@ services:
     container_name: blogging-machine
     build:
       context: .
-      dockerfile: gradle_built.dockerfile
+#     dockerfile: gradle_built.dockerfile
 #   restart: on-failure # Makes it not restart the process on success-signalling error codes (https://www.cloudbees.com/blog/ensuring-containers-are-always-running-with-dockers-restart-policy)
     ports:
       - "8080:8080"
