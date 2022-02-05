@@ -1,21 +1,43 @@
 version: "3.8" # https://docs.docker.com/compose/compose-file/compose-file-v3/
 
 services:
-  web:
+  app:
+    image: 'docker-spring-boot-postgres:latest'
     container_name: blogging-machine
     build:
       context: .
       dockerfile: gradle_built.dockerfile
-    # https://www.cloudbees.com/blog/ensuring-containers-are-always-running-with-dockers-restart-policy
-    # restart: on-failure # It will not restart on success-signalling error codes
+#   restart: on-failure # Makes it not restart the process on success-signalling error codes (https://www.cloudbees.com/blog/ensuring-containers-are-always-running-with-dockers-restart-policy)
     ports:
       - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/compose-postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    secrets:
+      - source: db_username
+        target: SPRING_DATASOURCE_USERNAME
+      - source: db_password
+        target: SPRING_DATASOURCE_PASSWORD
     volumes:
       - blogvolume:/tmp # placeholder FIXME actual directory
-    labels:
-      us.drullk.what: "This is a label"
+  db:
+    image: 'postgres:13.1-alpine'
+    container_name: db
+    secrets:
+      - source: db_username
+        target: POSTGRES_USER
+      - source: db_password
+        target: POSTGRES_PASSWORD
 
 volumes: # https://docs.docker.com/compose/compose-file/compose-file-v3/#volume-configuration-reference
   blogvolume:
     name: blogappstorage
     external: false
+
+secrets: # https://www.cloudsavvyit.com/12631/how-to-secure-sensitive-data-with-docker-compose-secrets/
+  db_username: # TODO
+    external: true
+  db_password: # compose-postgres
+    external: true
