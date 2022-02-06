@@ -7,4 +7,9 @@
 # # Requires there to be one and only one *.jar FIXME make into a variable from lines above or in docker_compose.yml
 # COPY --from=build ./build/libs/*.jar /blog_app.jar
 # ENTRYPOINT ["java","-jar","/blog_app.jar"]
-STOPSIGNAL 0
+
+FROM openjdk:17-jdk-alpine
+#VOLUME /tmp
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
