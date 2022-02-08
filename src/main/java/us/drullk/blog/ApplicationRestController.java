@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -29,8 +30,13 @@ public class ApplicationRestController {
 	}
 
 	@GetMapping("/api/users")
-	public ResponseEntity<List<User>> findUsers() {
-		return ResponseEntity.ok(service.findAll());
+	public ResponseEntity<List<JsonNode>> findUsers() {
+		List<JsonNode> users = new ArrayList<>();
+		service.findAll().forEach(user -> users.add(JsonNodeFactory.instance.objectNode().
+				put("id", user.getId()).
+				put("name", user.getName()).
+				put("email", user.getEmail())));
+		return ResponseEntity.ok(users);
 	}
 
 	@PostMapping("/api/user/register")
