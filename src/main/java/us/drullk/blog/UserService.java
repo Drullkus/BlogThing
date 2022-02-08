@@ -1,6 +1,8 @@
 package us.drullk.blog;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,10 +24,11 @@ public class UserService implements IUserService {
 	}
 
 	@Override
-	public User addUser(String firstname, String lastname) {
+	public User registerUser(String name, String email, String hash) {
 		User user = new User();
-		user.setFirstname(firstname);
-		user.setLastname(lastname);
+		user.setName(name);
+		user.setEmail(email);
+		user.setHash(hash);
 		repository.save(user);
 		return user;
 	}
@@ -33,5 +36,12 @@ public class UserService implements IUserService {
 	@Override
 	public Optional<User> getUser(Integer id) {
 		return repository.findById(id);
+	}
+
+	@Override
+	public Optional<User> getUser(String email) {
+		User user = new User();
+		user.setEmail(email);
+		return repository.findOne(Example.of(user, ExampleMatcher.matchingAll().withIgnoreCase()));
 	}
 }

@@ -7,8 +7,10 @@ public interface IUserService {
 
 	List<User> findAll();
 
-	User addUser(String firstname, String lastname);
+	User registerUser(String name, String email, String hash);
 
 	Optional<User> getUser(Integer id);
+
+	Optional<User> getUser(String email);
 
 }

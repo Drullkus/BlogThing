@@ -14,8 +14,9 @@ public class User {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
-	private String firstname;
-	private String lastname;
+	private String name;
+	private String email;
+	private String hash;
 
 	public void setId(Integer id) {
 		this.id = id;
@@ -25,28 +26,36 @@ public class User {
 		return id;
 	}
 
-	public String getFirstname() {
-		return firstname;
+	public String getName() {
+		return name;
 	}
 
-	public void setFirstname(String firstname) {
-		this.firstname = firstname;
+	public void setName(String name) {
+		this.name = name;
 	}
 
-	public String getLastname() {
-		return lastname;
+	public String getEmail() {
+		return email;
 	}
 
-	public void setLastname(String lastname) {
-		this.lastname = lastname;
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getHash() {
+		return hash;
+	}
+
+	public void setHash(String hash) {
+		this.hash = hash;
 	}
 
 	@Override
 	public int hashCode() {
 		int hash = 7;
 		hash = 79 * hash + Objects.hashCode(this.id);
-		hash = 79 * hash + Objects.hashCode(this.firstname);
-		hash = 79 * hash + Objects.hashCode(this.lastname);
+		hash = 79 * hash + Objects.hashCode(this.name);
+		hash = 79 * hash + Objects.hashCode(this.email);
 		return hash;
 	}
 
@@ -62,10 +71,10 @@ public class User {
 			return false;
 		}
 		final User other = (User) obj;
-		if (!this.firstname.equals(other.firstname)) {
+		if (!this.name.equals(other.name)) {
 			return false;
 		}
-		if (!this.lastname.equals(other.lastname)) {
+		if (!this.email.equals(other.email)) {
 			return false;
 		}
 		return Objects.equals(this.id, other.id);
@@ -73,10 +82,10 @@ public class User {
 
 	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder("City{");
+		final StringBuilder sb = new StringBuilder("User{");
 		sb.append("id=").append(id);
-		sb.append(", firstname='").append(firstname).append('\'');
-		sb.append(", lastname=").append(lastname);
+		sb.append(", name='").append(name).append('\'');
+		sb.append(", email=").append(email);
 		sb.append('}');
 		return sb.toString();
 	}
