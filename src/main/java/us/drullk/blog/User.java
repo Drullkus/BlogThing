@@ -1,5 +1,10 @@
 package us.drullk.blog;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
+import lombok.Setter;
+
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -12,43 +17,36 @@ import java.util.Objects;
 public class User {
 
 	@Id
+	@Getter
+	@Setter
+	@Column(nullable = false)
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
+
+	@Getter
+	@Setter
+	@Column(nullable = false)
 	private String name;
+
+	@Getter
+	@Setter
+	@Column(nullable = false)
 	private String email;
+
+	@Getter
+	@Setter
+	@JsonIgnore
 	private String hash;
 
-	public void setId(Integer id) {
-		this.id = id;
-	}
+	@Getter
+	@Setter
+	@JsonIgnore
+	private Long githubID;
 
-	public Integer getId() {
-		return id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public String getHash() {
-		return hash;
-	}
-
-	public void setHash(String hash) {
-		this.hash = hash;
-	}
+	@Getter
+	@Setter
+	@JsonIgnore
+	private String session;
 
 	@Override
 	public int hashCode() {

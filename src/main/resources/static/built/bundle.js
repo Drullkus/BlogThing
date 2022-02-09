@@ -31040,80 +31040,83 @@ var App = /*#__PURE__*/function (_React$Component) {
 
     _this = _super.call(this, props);
     _this.state = {
-      users: []
+      result: {}
     };
+    _this.handleSubmit = _this.handleSubmit.bind(_assertThisInitialized(_this));
+    _this.oAuth = _this.oAuth.bind(_assertThisInitialized(_this));
     return _this;
   }
 
   _createClass(App, [{
     key: "componentDidMount",
-    value: function componentDidMount() {
+    value: function componentDidMount() {}
+  }, {
+    key: "handleSubmit",
+    value: function handleSubmit(event) {
       var _this2 = this;
 
-      Axios.get('/api/users').then(function (response) {
+      event.preventDefault();
+      var _document$forms$ = document.forms[0],
+          email = _document$forms$.email,
+          password = _document$forms$.password;
+      Axios.post('/api/user/login', {
+        'email': email.value,
+        'password': password.value
+      }).then(function (response) {
         _this2.setState({
-          users: response.data
+          result: response.data
+        });
+      })["catch"](function (error) {
+        _this2.setState({
+          result: error.response.data
         });
       });
     }
   }, {
+    key: "oAuth",
+    value: function oAuth() {
+      window.open("https://github.com/login/oauth/authorize?scope=user&client_id=16f5cd1d403c499d26a4&redirect_uri=http://localhost:8080/oauth/github", "_self");
+    }
+  }, {
     key: "render",
     value: function render() {
-      return /*#__PURE__*/React.createElement(UserList, {
-        users: this.state.users
-      });
+      return /*#__PURE__*/React.createElement("div", {
+        className: "login"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "section"
+      }, /*#__PURE__*/React.createElement("h1", null, this.state.result.error)), /*#__PURE__*/React.createElement("div", {
+        className: "section"
+      }, /*#__PURE__*/React.createElement("h1", null, this.state.result.success)), /*#__PURE__*/React.createElement("form", {
+        onSubmit: this.handleSubmit
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "section"
+      }, /*#__PURE__*/React.createElement("label", null, "Email"), /*#__PURE__*/React.createElement("input", {
+        className: "entry",
+        type: "text",
+        name: "email",
+        required: true
+      })), /*#__PURE__*/React.createElement("div", {
+        className: "section"
+      }, /*#__PURE__*/React.createElement("label", null, "Password"), /*#__PURE__*/React.createElement("input", {
+        className: "entry",
+        type: "password",
+        name: "password",
+        required: true
+      })), /*#__PURE__*/React.createElement("div", {
+        className: "section"
+      }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("input", {
+        className: "button",
+        type: "submit"
+      })))), /*#__PURE__*/React.createElement("div", {
+        className: "section"
+      }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("button", {
+        className: "button",
+        onClick: this.oAuth
+      }, "GitHub"))));
     }
   }]);
 
   return App;
-}(React.Component);
-
-var UserList = /*#__PURE__*/function (_React$Component2) {
-  _inherits(UserList, _React$Component2);
-
-  var _super2 = _createSuper(UserList);
-
-  function UserList() {
-    _classCallCheck(this, UserList);
-
-    return _super2.apply(this, arguments);
-  }
-
-  _createClass(UserList, [{
-    key: "render",
-    value: function render() {
-      var users = this.props.users.map(function (user) {
-        return /*#__PURE__*/React.createElement(User, {
-          key: user.id,
-          user: user
-        });
-      });
-      return /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tbody", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "ID"), /*#__PURE__*/React.createElement("th", null, "First Name"), /*#__PURE__*/React.createElement("th", null, "Last Name")), users));
-    }
-  }]);
-
-  return UserList;
-}(React.Component);
-
-var User = /*#__PURE__*/function (_React$Component3) {
-  _inherits(User, _React$Component3);
-
-  var _super3 = _createSuper(User);
-
-  function User() {
-    _classCallCheck(this, User);
-
-    return _super3.apply(this, arguments);
-  }
-
-  _createClass(User, [{
-    key: "render",
-    value: function render() {
-      return /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, this.props.user.id), /*#__PURE__*/React.createElement("td", null, this.props.user.firstname), /*#__PURE__*/React.createElement("td", null, this.props.user.lastname));
-    }
-  }]);
-
-  return User;
 }(React.Component);
 
 ReactDOM.render( /*#__PURE__*/React.createElement(App, null), document.getElementById('react'));
