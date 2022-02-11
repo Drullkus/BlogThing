@@ -32,6 +32,12 @@ public class ApplicationRestController {
 		this.service = service;
 	}
 
+	@GetMapping("/api/session")
+	public JsonNode session(HttpServletRequest request) {
+		Object session = request.getSession().getAttribute("session");
+		return JsonNodeFactory.instance.objectNode().put("valid", session != null && service.getUserFromSession(session.toString()).isPresent());
+	}
+
 	@GetMapping("/api/users")
 	public ResponseEntity<List<User>> findUsers() {
 		return ResponseEntity.ok(service.findAll());

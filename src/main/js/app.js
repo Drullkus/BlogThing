@@ -1,8 +1,61 @@
 const React = require("react");
 const ReactDOM = require('react-dom');
 const Axios = require('axios');
+const Router = require("react-router");
+
 
 class App extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            authorized: false
+        };
+        this.session = this.session.bind(this);
+    }
+
+    componentDidMount() {
+        Axios.get('/api/session').then(response => {
+            this.session(response.data.valid);
+        })
+    }
+
+    session(valid) {
+        this.setState({authorized: valid});
+    }
+
+    render() {
+        if(this.state.authorized) {
+            return (<Profile/>);
+        } else {
+            return (<Login session = { this.session } />);
+        }
+    }
+}
+
+class Profile extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+
+        }
+    }
+
+    componentDidMount() {
+
+    }
+
+    render() {
+        return (
+            <div>
+                <h1>Profile</h1>
+            </div>
+        )
+    }
+}
+
+class Login extends React.Component {
 
     constructor(props) {
         super(props);
@@ -23,8 +76,8 @@ class App extends React.Component {
         Axios.post('/api/user/login', {
             'email': email.value,
             'password': password.value
-        }).then(response => {
-            this.setState({result: response.data});
+        }).then(() => {
+            this.props.session(true);
         }).catch(error => {
             this.setState({result: error.response.data});
         });
@@ -40,9 +93,6 @@ class App extends React.Component {
                 <div className="section">
                     <h1>{this.state.result.error}</h1>
                 </div>
-                <div className="section">
-                    <h1>{this.state.result.success}</h1>
-                </div>
                 <form onSubmit={this.handleSubmit}>
                     <div className="section">
                         <label>Email</label>
@@ -52,20 +102,21 @@ class App extends React.Component {
                         <label>Password</label>
                         <input className="entry" type="password" name="password" required />
                     </div>
-                        <div className="section">
-                            <p>
-                                <input className="button" type="submit" />
-                            </p>
-                        </div>
-                </form>
                     <div className="section">
                         <p>
-                            <button className="button" onClick={this.oAuth} >GitHub</button>
+                            <input className="button" type="submit" />
                         </p>
                     </div>
+                </form>
+                <div className="section">
+                    <p>
+                        <button className="button" onClick={this.oAuth} >GitHub</button>
+                    </p>
+                </div>
             </div>
         );
     }
+
 }
 
 ReactDOM.render(<App/>, document.getElementById('react'))

@@ -28,8 +28,7 @@ public class ApplicationController {
 
 	@GetMapping("/")
 	public String index(HttpServletRequest request) {
-		Object session = request.getSession().getAttribute("session");
-		return session != null && userService.getUserFromSession(session.toString()).isPresent() ? "profile" : "index";
+		return "index";
 	}
 
 	public static String newSession(HttpServletRequest request) {
@@ -60,14 +59,14 @@ public class ApplicationController {
 		user.ifPresent(u -> u.setGithubID(id));
 		User u = user.orElseGet(() -> userService.getUserFromGithubID(id).orElseGet(() -> userService.registerUserViaGithub(github.get("name").asText(), email == null ? "" : email, id)));
 		userService.updateSession(u, newSession(request));
-		return u.getEmail().isEmpty() ? "oauth/email" : "profile";
+		return u.getEmail().isEmpty() ? "oauth/email" : "redirect";
 	}
 
 	@GetMapping("/oauth/update")
 	public String updateEmail(HttpServletRequest request, @RequestParam String email) {
 		if (ApplicationRestController.EMAIL_REGEX.matcher(email).matches())
 			userService.getUserFromSession(request.getSession().getAttribute("session").toString()).ifPresent(user -> userService.updateEmail(user, email));
-		return "profile";
+		return "redirect";
 	}
 
 }
