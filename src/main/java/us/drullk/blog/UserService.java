@@ -72,6 +72,8 @@ public class UserService implements IUserService {
 
 	@Override
 	public Optional<User> getUserFromEmail(String email) {
+		if (email == null || email.isEmpty())
+			return Optional.empty();
 		User user = new User();
 		user.setEmail(email);
 		return repository.findOne(Example.of(user, ExampleMatcher.matchingAll().withIgnoreCase()));
@@ -79,6 +81,8 @@ public class UserService implements IUserService {
 
 	@Override
 	public Optional<User> getUserFromGithubID(Long id) {
+		if (id == null)
+			return Optional.empty();
 		User user = new User();
 		user.setGithubID(id);
 		return repository.findOne(Example.of(user, ExampleMatcher.matchingAll().withIgnoreCase()));
@@ -86,6 +90,8 @@ public class UserService implements IUserService {
 
 	@Override
 	public Optional<User> getUserFromSession(String session) {
+		if (session == null || session.isEmpty())
+			return Optional.empty();
 		User user = new User();
 		user.setSession(session);
 		return repository.findOne(Example.of(user, ExampleMatcher.matchingAll().withIgnoreCase()));

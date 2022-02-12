@@ -3,6 +3,7 @@ package us.drullk.blog;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
@@ -32,59 +34,65 @@ public class ApplicationRestController {
 		this.service = service;
 	}
 
-	@GetMapping("/api/session")
-	public JsonNode session(HttpServletRequest request) {
-		Object session = request.getSession().getAttribute("session");
-		return JsonNodeFactory.instance.objectNode().put("valid", session != null && service.getUserFromSession(session.toString()).isPresent());
-	}
-
 	@GetMapping("/api/users")
 	public ResponseEntity<List<User>> findUsers() {
 		return ResponseEntity.ok(service.findAll());
 	}
 
 	@PostMapping("/api/user/register")
-	public ResponseEntity<JsonNode> registerUser(HttpServletRequest request, @RequestBody JsonNode payload) {
+	public ResponseEntity<JsonNode> registerUser(HttpServletResponse response, @RequestBody JsonNode payload) {
 		if (payload.hasNonNull("name") && payload.hasNonNull("email") && payload.hasNonNull("password")) {
 			final String email = payload.get("email").asText();
 			if(!EMAIL_REGEX.matcher(email).matches())
-				return ResponseEntity.badRequest().body(JsonNodeFactory.instance.objectNode().put("error", "Invalid Email Address"));
+				return ResponseEntity.badRequest().body(jsonObject().put("error", "Invalid Email Address"));
 			Optional<User> existing = service.getUserFromEmail(email);
 			if (existing.isPresent() && existing.get().getHash() != null && !existing.get().getHash().isEmpty())
-				return ResponseEntity.badRequest().body(JsonNodeFactory.instance.objectNode().put("error", "User already registered"));
+				return ResponseEntity.badRequest().body(jsonObject().put("error", "User already registered"));
 			final String hash = new BCryptPasswordEncoder(12, new SecureRandom()).encode(payload.get("password").asText());
 			User user = existing.isPresent() ? service.updatePassword(existing.get(), hash) : service.registerUser(payload.get("name").asText(), email, hash);
-			service.updateSession(user, ApplicationController.newSession(request));
-			return ResponseEntity.ok(JsonNodeFactory.instance.objectNode().
+			service.updateSession(user, ApplicationController.newSession(response));
+			return ResponseEntity.ok(jsonObject().
 					put("success", "User successfully created").
 					set("user", new ObjectMapper().
 							valueToTree(user)));
 		}
-		return ResponseEntity.badRequest().body(JsonNodeFactory.instance.objectNode().put("error", "Missing Data"));
+		return ResponseEntity.badRequest().body(jsonObject().put("error", "Missing Data"));
 	}
 
 	@PostMapping("/api/user/login")
-	public ResponseEntity<JsonNode> loginUser(HttpServletRequest request, @RequestBody JsonNode payload) {
+	public ResponseEntity<JsonNode> loginUser(HttpServletResponse response, @RequestBody JsonNode payload) {
 		if (payload.hasNonNull("email") && payload.hasNonNull("password")) {
 			final String email = payload.get("email").asText();
 			if(!EMAIL_REGEX.matcher(email).matches())
-				return ResponseEntity.badRequest().body(JsonNodeFactory.instance.objectNode().put("error", "Invalid Email Address"));
+				return ResponseEntity.badRequest().body(jsonObject().put("error", "Invalid Email Address"));
 			Optional<User> user = service.getUserFromEmail(email);
 			if (user.isEmpty())
-				return ResponseEntity.badRequest().body(JsonNodeFactory.instance.objectNode().put("error", "Unknown Email Address"));
+				return ResponseEntity.badRequest().body(jsonObject().put("error", "Unknown Email Address"));
 			if(!new BCryptPasswordEncoder(12, new SecureRandom()).matches(payload.get("password").asText(), user.get().getHash()))
-				return ResponseEntity.badRequest().body(JsonNodeFactory.instance.objectNode().put("error", "Wrong password"));
-			service.updateSession(user.get(), ApplicationController.newSession(request));
-			return ResponseEntity.ok(JsonNodeFactory.instance.objectNode().
+				return ResponseEntity.badRequest().body(jsonObject().put("error", "Wrong password"));
+			service.updateSession(user.get(), ApplicationController.newSession(response));
+			return ResponseEntity.ok(jsonObject().
 					put("success", "User successfully logged in").
 					set("user", new ObjectMapper().valueToTree(user)));
 		}
-		return ResponseEntity.badRequest().body(JsonNodeFactory.instance.objectNode().put("error", "Missing Data"));
+		return ResponseEntity.badRequest().body(jsonObject().put("error", "Missing Data"));
+	}
+
+	@PostMapping("/api/user/logout")
+	public ResponseEntity<ObjectNode> logoutUser(HttpServletRequest request, HttpServletResponse response) {
+		return ApplicationController.getSessionUser(request, service).map(user -> {
+			ApplicationController.killSession(response, service, Optional.of(user));
+			return ResponseEntity.ok(jsonObject().put("success", "Successfully Logged Out!"));
+		}).orElse(ResponseEntity.badRequest().body(jsonObject().put("error", "Not Logged In!")));
 	}
 
 	@GetMapping("/api/users/{id}")
 	public ResponseEntity<User> getUser(@PathVariable Integer id) {
 		return service.getUser(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
+	}
+	
+	private static ObjectNode jsonObject() {
+		return JsonNodeFactory.instance.objectNode();
 	}
 
 }
