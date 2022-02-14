@@ -44,11 +44,19 @@ public class ApplicationRestController {
 		this.postService = postService;
 	}
 
+	/**
+	 * Output: List of Users
+	 */
 	@GetMapping("/api/users")
 	public ResponseEntity<List<User>> findUsers() {
 		return ResponseEntity.ok(userService.findAll());
 	}
 
+	/**
+	 * Registers a User
+	 * Input: [String: name, String email, String password]
+	 * Output: [String success, User user]
+	 */
 	@PostMapping("/api/user/register")
 	public ResponseEntity<JsonNode> registerUser(HttpServletResponse response, @RequestBody JsonNode payload) {
 		if (payload.hasNonNull("name") && payload.hasNonNull("email") && payload.hasNonNull("password")) {
@@ -69,6 +77,11 @@ public class ApplicationRestController {
 		return ResponseEntity.badRequest().body(jsonObject().put("error", "Missing Data"));
 	}
 
+	/**
+	 * Login as a User, assigns a Session Cookie
+	 * Input: [String email, String password]
+	 * Output: [String success, User user] or [String error]
+	 */
 	@PostMapping("/api/user/login")
 	public ResponseEntity<JsonNode> loginUser(HttpServletResponse response, @RequestBody JsonNode payload) {
 		if (payload.hasNonNull("email") && payload.hasNonNull("password")) {
@@ -88,6 +101,11 @@ public class ApplicationRestController {
 		return ResponseEntity.badRequest().body(jsonObject().put("error", "Missing Data"));
 	}
 
+	/**
+	 * Logout of a session
+	 * Required: A Session Cookie
+	 * Output: [String success] or [String error]
+	 */
 	@PostMapping("/api/user/logout")
 	public ResponseEntity<ObjectNode> logoutUser(HttpServletRequest request, HttpServletResponse response) {
 		return ApplicationController.getSessionUser(request, userService).map(user -> {
@@ -96,11 +114,18 @@ public class ApplicationRestController {
 		}).orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Not Logged In!")));
 	}
 
+	/**
+	 * Get a User by their ID
+	 */
 	@GetMapping("/api/users/{id}")
 	public ResponseEntity<User> getUser(@PathVariable Integer id) {
 		return userService.getUser(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
 	}
 
+	/**
+	 * Get the currently logged in User by the Session Cookie
+	 * Output: User object or [String error]
+	 */
 	@GetMapping("/api/users/self")
 	public ResponseEntity<Object> getSelf(HttpServletRequest request) {
 		return ApplicationController.getSessionUser(request, userService).
@@ -108,6 +133,11 @@ public class ApplicationRestController {
 				orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Invalid Session!")));
 	}
 
+	/**
+	 * Get Posts sorted by timestamp
+	 * Input: [Optional Integer author, Optional Integer page (>= 0), Optional Integer size (> 0, <= 50))]
+	 * Output: [Integer page, Integer size, Integer pages, List Post data]
+	 */
 	@PostMapping("/api/posts")
 	public ResponseEntity<JsonNode> getPosts(@RequestBody JsonNode body) {
 		JsonNode author = body.get("author");
@@ -117,9 +147,9 @@ public class ApplicationRestController {
 		int s = size == null || !size.isInt() || size.asInt() <= 0 || size.asInt() > 50 ? 50 : size.asInt();
 		Page<Post> post = author != null && author.isInt() ?
 
-				postService.findForAuthor(author.asInt(), p, s, Sort.unsorted()) :
+				postService.findForAuthor(author.asInt(), p, s, Sort.by("timestamp")) :
 
-				postService.find(p, s, Sort.unsorted());
+				postService.find(p, s, Sort.by("timestamp"));
 		ArrayNode nodes = JsonNodeFactory.instance.arrayNode();
 		post.toList().forEach(data -> nodes.add(new ObjectMapper().valueToTree(data)));
 		return ResponseEntity.ok(jsonObject().
@@ -129,6 +159,12 @@ public class ApplicationRestController {
 				set("data", nodes));
 	}
 
+	/**
+	 * Submit a Post
+	 * Requires a Session Cookie
+	 * Input: [String data]
+	 * Output: [Post data]
+	 */
 	@PostMapping("/api/post/submit")
 	public ResponseEntity<?> addPost(HttpServletRequest request, @RequestBody JsonNode body) {
 		return ApplicationController.getSessionUser(request, userService).map(user -> {
@@ -139,11 +175,21 @@ public class ApplicationRestController {
 		}).orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Not Logged In!")));
 	}
 
+	/**
+	 * Get a Post by its ID
+	 * Output: Post object
+	 */
 	@PostMapping("/api/posts/{id}")
 	public ResponseEntity<Post> getPost(@PathVariable Integer id) {
 		return postService.get(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
 	}
 
+	/**
+	 * Edit a Post
+	 * Requires a Session Cookie
+	 * Input: [String data, Integer id]
+	 * Output: [Post data] or [String error]
+	 */
 	@PostMapping("/api/post/edit")
 	public ResponseEntity<?> editPost(HttpServletRequest request, @RequestBody JsonNode body) {
 		return ApplicationController.getSessionUser(request, userService).map(user -> {
@@ -161,6 +207,11 @@ public class ApplicationRestController {
 		}).orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Not Logged In!")));
 	}
 
+	/**
+	 * Delete a Post
+	 * Requires a Session Cookie
+	 * Output: [String success] or [String error]
+	 */
 	@PostMapping("/api/post/delete/{id}")
 	public ResponseEntity<?> editPost(HttpServletRequest request, @PathVariable Integer id) {
 		return ApplicationController.getSessionUser(request, userService).map(user -> postService.get(id).map(post -> {
