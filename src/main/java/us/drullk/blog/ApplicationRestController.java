@@ -2,10 +2,14 @@ package us.drullk.blog;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,10 +17,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import us.drullk.blog.post.IPostService;
+import us.drullk.blog.post.Post;
+import us.drullk.blog.user.IUserService;
+import us.drullk.blog.user.User;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -27,16 +36,18 @@ public class ApplicationRestController {
 
 	public static final Pattern EMAIL_REGEX = Pattern.compile("(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])");
 
-	private final IUserService service;
+	private final IUserService userService;
+	private final IPostService postService;
 
 	@Autowired
-	public ApplicationRestController(IUserService service) {
-		this.service = service;
+	public ApplicationRestController(IUserService userService, IPostService postService) {
+		this.userService = userService;
+		this.postService = postService;
 	}
 
 	@GetMapping("/api/users")
 	public ResponseEntity<List<User>> findUsers() {
-		return ResponseEntity.ok(service.findAll());
+		return ResponseEntity.ok(userService.findAll());
 	}
 
 	@PostMapping("/api/user/register")
@@ -45,12 +56,12 @@ public class ApplicationRestController {
 			final String email = payload.get("email").asText();
 			if(!EMAIL_REGEX.matcher(email).matches())
 				return ResponseEntity.badRequest().body(jsonObject().put("error", "Invalid Email Address"));
-			Optional<User> existing = service.getUserFromEmail(email);
+			Optional<User> existing = userService.getUserFromEmail(email);
 			if (existing.isPresent() && existing.get().getHash() != null && !existing.get().getHash().isEmpty())
 				return ResponseEntity.badRequest().body(jsonObject().put("error", "User already registered"));
 			final String hash = new BCryptPasswordEncoder(12, new SecureRandom()).encode(payload.get("password").asText());
-			User user = existing.isPresent() ? service.updatePassword(existing.get(), hash) : service.registerUser(payload.get("name").asText(), email, hash);
-			service.updateSession(user, ApplicationController.newSession(response));
+			User user = existing.isPresent() ? userService.updatePassword(existing.get(), hash) : userService.registerUser(payload.get("name").asText(), email, hash);
+			userService.updateSession(user, ApplicationController.newSession(response));
 			return ResponseEntity.ok(jsonObject().
 					put("success", "User successfully created").
 					set("user", new ObjectMapper().
@@ -65,30 +76,68 @@ public class ApplicationRestController {
 			final String email = payload.get("email").asText();
 			if(!EMAIL_REGEX.matcher(email).matches())
 				return ResponseEntity.badRequest().body(jsonObject().put("error", "Invalid Email Address"));
-			Optional<User> user = service.getUserFromEmail(email);
+			Optional<User> user = userService.getUserFromEmail(email);
 			if (user.isEmpty())
 				return ResponseEntity.badRequest().body(jsonObject().put("error", "Unknown Email Address"));
 			if(!new BCryptPasswordEncoder(12, new SecureRandom()).matches(payload.get("password").asText(), user.get().getHash()))
 				return ResponseEntity.badRequest().body(jsonObject().put("error", "Wrong password"));
-			service.updateSession(user.get(), ApplicationController.newSession(response));
+			userService.updateSession(user.get(), ApplicationController.newSession(response));
 			return ResponseEntity.ok(jsonObject().
 					put("success", "User successfully logged in").
-					set("user", new ObjectMapper().valueToTree(user)));
+					set("user", new ObjectMapper().valueToTree(user.get())));
 		}
 		return ResponseEntity.badRequest().body(jsonObject().put("error", "Missing Data"));
 	}
 
 	@PostMapping("/api/user/logout")
 	public ResponseEntity<ObjectNode> logoutUser(HttpServletRequest request, HttpServletResponse response) {
-		return ApplicationController.getSessionUser(request, service).map(user -> {
-			ApplicationController.killSession(response, service, Optional.of(user));
+		return ApplicationController.getSessionUser(request, userService).map(user -> {
+			ApplicationController.killSession(response, userService, Optional.of(user));
 			return ResponseEntity.ok(jsonObject().put("success", "Successfully Logged Out!"));
-		}).orElse(ResponseEntity.badRequest().body(jsonObject().put("error", "Not Logged In!")));
+		}).orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Not Logged In!")));
 	}
 
 	@GetMapping("/api/users/{id}")
 	public ResponseEntity<User> getUser(@PathVariable Integer id) {
-		return service.getUser(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
+		return userService.getUser(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
+	}
+
+	@GetMapping("/api/users/self")
+	public ResponseEntity<Object> getSelf(HttpServletRequest request) {
+		return ApplicationController.getSessionUser(request, userService).
+				map(u -> ResponseEntity.ok(new ObjectMapper().valueToTree(u))).
+				orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Invalid Session!")));
+	}
+
+	@PostMapping("/api/posts")
+	public ResponseEntity<JsonNode> getPosts(@RequestBody JsonNode body) {
+		JsonNode author = body.get("author");
+		JsonNode page = body.get("page");
+		JsonNode size = body.get("size");
+		int p = page == null || !page.isInt() || page.asInt() < 0 ? 0 : page.asInt();
+		int s = size == null || !size.isInt() || size.asInt() <= 0 || size.asInt() > 50 ? 50 : size.asInt();
+		Page<Post> post = author != null && author.isInt() ?
+
+				postService.findForAuthor(author.asInt(), p, s, Sort.unsorted()) :
+
+				postService.find(p, s, Sort.unsorted());
+		ArrayNode nodes = JsonNodeFactory.instance.arrayNode();
+		post.toList().forEach(data -> nodes.add(new ObjectMapper().valueToTree(data)));
+		return ResponseEntity.ok(jsonObject().
+				put("page", p).
+				put("size", s).
+				put("pages", post.getTotalPages()).
+				set("data", nodes));
+	}
+
+	@PostMapping("/api/post/submit")
+	public ResponseEntity<?> addPost(HttpServletRequest request, @RequestBody JsonNode body) {
+		return ApplicationController.getSessionUser(request, userService).map(user -> {
+			JsonNode text = body.get("data");
+			if (text == null || !text.isTextual() || text.asText().isEmpty())
+				return ResponseEntity.badRequest().body(jsonObject().put("error", "No Text"));
+			return ResponseEntity.ok(jsonObject().set("data", new ObjectMapper().valueToTree(postService.create(user.getId(), text.asText()))));
+		}).orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Not Logged In!")));
 	}
 	
 	private static ObjectNode jsonObject() {

@@ -32737,7 +32737,8 @@ var App = /*#__PURE__*/function (_React$Component) {
 
     _this = _super.call(this, props);
     _this.state = {
-      authorized: !!js_cookie__WEBPACK_IMPORTED_MODULE_1___default.a.get('session')
+      authorized: !!js_cookie__WEBPACK_IMPORTED_MODULE_1___default.a.get('session'),
+      self: {}
     };
     _this.session = _this.session.bind(_assertThisInitialized(_this));
     return _this;
@@ -32745,12 +32746,24 @@ var App = /*#__PURE__*/function (_React$Component) {
 
   _createClass(App, [{
     key: "componentDidMount",
-    value: function componentDidMount() {}
+    value: function componentDidMount() {
+      var _this2 = this;
+
+      if (this.state.authorized) {
+        Axios.get('/api/users/self').then(function (response) {
+          return _this2.setState({
+            authorized: _this2.state.authorized,
+            self: response.data
+          });
+        });
+      }
+    }
   }, {
     key: "session",
-    value: function session(valid) {
+    value: function session(valid, data) {
       this.setState({
-        authorized: valid
+        authorized: valid,
+        self: data
       });
     }
   }, {
@@ -32758,7 +32771,8 @@ var App = /*#__PURE__*/function (_React$Component) {
     value: function render() {
       if (this.state.authorized) {
         return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Profile, {
-          session: this.session
+          session: this.session,
+          data: this.state.self
         });
       } else {
         return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_2__["BrowserRouter"], null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_2__["Routes"], null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_2__["Route"], {
@@ -32797,7 +32811,7 @@ function Profile(props) {
     onClick: logout
   }, "Logout")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
     className: "section"
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null, "Profile")));
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null, props.data && props.data.name, "'s Profile")));
 }
 
 function Login(props) {
@@ -32814,8 +32828,8 @@ function Login(props) {
     Axios.post('/api/user/login', {
       'email': email.value,
       'password': password.value
-    }).then(function () {
-      return props.session(true);
+    }).then(function (response) {
+      return props.session(true, response.data.user);
     })["catch"](function (error) {
       return setResult(error.response.data);
     });
@@ -32879,8 +32893,8 @@ function Register(props) {
       'email': email.value,
       'name': name.value,
       'password': password.value
-    }).then(function () {
-      return props.session(true);
+    }).then(function (response) {
+      return props.session(true, response.data.user);
     })["catch"](function (error) {
       return setResult(error.response.data);
     });

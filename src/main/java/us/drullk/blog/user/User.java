@@ -1,4 +1,4 @@
-package us.drullk.blog;
+package us.drullk.blog.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
@@ -47,6 +47,11 @@ public class User {
 	@Setter
 	@JsonIgnore
 	private String session;
+
+	@Getter
+	@Setter
+	@Column(nullable = false)
+	private Boolean admin = false;
 
 	@Override
 	public int hashCode() {

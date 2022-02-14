@@ -1,4 +1,4 @@
-package us.drullk.blog;
+package us.drullk.blog.user;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +19,8 @@ public interface IUserService {
 
 	User updateSession(User user, String session);
 
+	User updateAdminStatus(User user, boolean status);
+
 	Optional<User> getUser(Integer id);
 
 	Optional<User> getUserFromEmail(String email);
@@ -26,5 +28,7 @@ public interface IUserService {
 	Optional<User> getUserFromGithubID(Long id);
 
 	Optional<User> getUserFromSession(String session);
+
+	boolean isAdmin(User user);
 
 }

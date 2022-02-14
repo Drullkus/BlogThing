@@ -8,6 +8,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import us.drullk.blog.user.IUserService;
+import us.drullk.blog.user.User;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -86,17 +88,6 @@ public class ApplicationController {
 		user.ifPresent(u -> u.setGithubID(id)); // Link the potential registered Email account
 		User u = user.orElseGet(() -> userService.registerUserViaGithub(github.get("name").asText(), email == null ? "" : email, id));
 		userService.updateSession(u, newSession(response));
-		return u.getEmail().isEmpty() ? "oauth/email" : "redirect";
-	}
-
-	@GetMapping("/oauth/update")
-	public String updateEmail(HttpServletRequest request, @RequestParam String email) {
-		if (ApplicationRestController.EMAIL_REGEX.matcher(email).matches())
-			getSessionUser(request, userService).ifPresent(user -> {
-				String e = user.getEmail();
-				if (e == null || e.isEmpty()) // Don't update an already registered Email
-					userService.updateEmail(user, email);
-			});
 		return "redirect";
 	}
 

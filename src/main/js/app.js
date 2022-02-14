@@ -11,22 +11,31 @@ class App extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            authorized: !!Cookies.get('session')
+            authorized: !!Cookies.get('session'),
+            self: {}
         };
         this.session = this.session.bind(this);
     }
 
     componentDidMount() {
-
+        if (this.state.authorized) {
+            Axios.get('/api/users/self').then(response => this.setState({
+                authorized: this.state.authorized,
+                self: response.data
+            }));
+        }
     }
 
-    session(valid) {
-        this.setState({authorized: valid});
+    session(valid, data) {
+        this.setState({
+            authorized: valid,
+            self: data
+        });
     }
 
     render() {
         if (this.state.authorized) {
-            return (<Profile session={this.session}/>);
+            return (<Profile session={this.session} data={this.state.self}/>);
         } else {
             return (
                 <Router>
@@ -54,7 +63,7 @@ function Profile(props) {
                 <button className="button" onClick={logout}>Logout</button>
             </div>
             <div className="section">
-                <h1>Profile</h1>
+                <h1>{props.data && props.data.name}'s Profile</h1>
             </div>
         </div>
     )
@@ -71,7 +80,7 @@ function Login(props) {
         Axios.post('/api/user/login', {
             'email': email.value,
             'password': password.value
-        }).then(() => props.session(true))
+        }).then((response) => props.session(true, response.data.user))
             .catch(error => setResult(error.response.data));
     }
 
@@ -123,7 +132,7 @@ function Register(props) {
             'email': email.value,
             'name': name.value,
             'password': password.value
-        }).then(() => props.session(true))
+        }).then((response) => props.session(true, response.data.user))
             .catch(error => setResult(error.response.data));
     }
 

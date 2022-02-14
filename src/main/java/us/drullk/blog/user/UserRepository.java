@@ -1,4 +1,4 @@
-package us.drullk.blog;
+package us.drullk.blog.user;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

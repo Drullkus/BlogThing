@@ -1,4 +1,4 @@
-package us.drullk.blog;
+package us.drullk.blog.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
@@ -66,6 +66,12 @@ public class UserService implements IUserService {
 	}
 
 	@Override
+	public User updateAdminStatus(User user, boolean status) {
+		user.setAdmin(status);
+		return repository.save(user);
+	}
+
+	@Override
 	public Optional<User> getUser(Integer id) {
 		return repository.findById(id);
 	}
@@ -76,7 +82,7 @@ public class UserService implements IUserService {
 			return Optional.empty();
 		User user = new User();
 		user.setEmail(email);
-		return repository.findOne(Example.of(user, ExampleMatcher.matchingAll().withIgnoreCase()));
+		return repository.findOne(Example.of(user, ExampleMatcher.matchingAll().withIgnorePaths("admin").withIgnoreCase()));
 	}
 
 	@Override
@@ -85,7 +91,7 @@ public class UserService implements IUserService {
 			return Optional.empty();
 		User user = new User();
 		user.setGithubID(id);
-		return repository.findOne(Example.of(user, ExampleMatcher.matchingAll().withIgnoreCase()));
+		return repository.findOne(Example.of(user, ExampleMatcher.matchingAll().withIgnorePaths("admin").withIgnoreCase()));
 	}
 
 	@Override
@@ -94,6 +100,11 @@ public class UserService implements IUserService {
 			return Optional.empty();
 		User user = new User();
 		user.setSession(session);
-		return repository.findOne(Example.of(user, ExampleMatcher.matchingAll().withIgnoreCase()));
+		return repository.findOne(Example.of(user, ExampleMatcher.matchingAll().withIgnorePaths("admin").withIgnoreCase()));
+	}
+
+	@Override
+	public boolean isAdmin(User user) {
+		return user.getAdmin();
 	}
 }
