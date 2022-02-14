@@ -25,7 +25,6 @@ import us.drullk.blog.user.User;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -139,7 +138,41 @@ public class ApplicationRestController {
 			return ResponseEntity.ok(jsonObject().set("data", new ObjectMapper().valueToTree(postService.create(user.getId(), text.asText()))));
 		}).orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Not Logged In!")));
 	}
-	
+
+	@PostMapping("/api/posts/{id}")
+	public ResponseEntity<Post> getPost(@PathVariable Integer id) {
+		return postService.get(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
+	}
+
+	@PostMapping("/api/post/edit")
+	public ResponseEntity<?> editPost(HttpServletRequest request, @RequestBody JsonNode body) {
+		return ApplicationController.getSessionUser(request, userService).map(user -> {
+			JsonNode text = body.get("data");
+			JsonNode id = body.get("id");
+			if (text == null || !text.isTextual() || text.asText().isEmpty())
+				return ResponseEntity.badRequest().body(jsonObject().put("error", "No Text"));
+			if (id == null || !id.isInt())
+				return ResponseEntity.badRequest().body(jsonObject().put("error", "Invalid ID"));
+			return postService.get(id.asInt()).map(post -> {
+				if (post.getAuthor().equals(user.getId()))
+					return ResponseEntity.ok(jsonObject().set("data", new ObjectMapper().valueToTree(postService.edit(post, text.asText()))));
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Access Denied"));
+			}).orElse(ResponseEntity.badRequest().body(jsonObject().put("error", "Post doesn't exist!")));
+		}).orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Not Logged In!")));
+	}
+
+	@PostMapping("/api/post/delete/{id}")
+	public ResponseEntity<?> editPost(HttpServletRequest request, @PathVariable Integer id) {
+		return ApplicationController.getSessionUser(request, userService).map(user -> postService.get(id).map(post -> {
+			if (post.getAuthor().equals(user.getId())) {
+				postService.delete(id);
+				return ResponseEntity.ok(jsonObject().put("success", "Post Deleted!"));
+			}
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Access Denied"));
+		}).orElse(ResponseEntity.badRequest().body(jsonObject().put("error", "Post doesn't exist!")))).
+				orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Not Logged In!")));
+	}
+
 	private static ObjectNode jsonObject() {
 		return JsonNodeFactory.instance.objectNode();
 	}
