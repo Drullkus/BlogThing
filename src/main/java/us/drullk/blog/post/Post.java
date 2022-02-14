@@ -28,7 +28,7 @@ public class Post {
 
 	@Getter
 	@Setter
-	@Column(nullable = false)
+	@Column(nullable = false, columnDefinition = "TEXT")
 	private String text;
 
 	@Getter
