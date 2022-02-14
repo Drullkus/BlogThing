@@ -134,7 +134,7 @@ public class ApplicationRestController {
 	}
 
 	/**
-	 * Get Posts sorted by timestamp
+	 * Get Posts sorted by timestamp descending
 	 * Input: [Optional Integer author, Optional Integer page (>= 0), Optional Integer size (> 0, <= 50))]
 	 * Output: [Integer page, Integer size, Integer pages, List Post data]
 	 */
@@ -145,11 +145,12 @@ public class ApplicationRestController {
 		JsonNode size = body.get("size");
 		int p = page == null || !page.isInt() || page.asInt() < 0 ? 0 : page.asInt();
 		int s = size == null || !size.isInt() || size.asInt() <= 0 || size.asInt() > 50 ? 50 : size.asInt();
+		Sort sort = Sort.by(Sort.Direction.DESC, "timestamp");
 		Page<Post> post = author != null && author.isInt() ?
 
-				postService.findForAuthor(author.asInt(), p, s, Sort.by("timestamp")) :
+				postService.findForAuthor(author.asInt(), p, s, sort) :
 
-				postService.find(p, s, Sort.by("timestamp"));
+				postService.find(p, s, sort);
 		ArrayNode nodes = JsonNodeFactory.instance.arrayNode();
 		post.toList().forEach(data -> nodes.add(new ObjectMapper().valueToTree(data)));
 		return ResponseEntity.ok(jsonObject().
