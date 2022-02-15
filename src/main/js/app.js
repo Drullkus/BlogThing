@@ -1,10 +1,5 @@
 import React, {useState} from 'react';
-import {
-    BrowserRouter as Router,
-    Link,
-    Route,
-    Routes
-} from "react-router-dom";
+import {BrowserRouter as Router, Link, Route, Routes} from "react-router-dom";
 import {useParams} from "react-router";
 
 const ReactDOM = require('react-dom');
@@ -101,7 +96,7 @@ class Home extends React.Component {
 
     render() {
         let posts = [];
-        this.state.posts.forEach(p => posts.push(<Post key={p.id} post={p} users={this.state.userMap}/>))
+        this.state.posts.forEach(p => posts.push(<Post key={p.id} post={p} users={this.state.userMap} self={this.state.self} refresh={this.refresh}/>))
         return (
             <div className="main">
                 <div className="section">
@@ -127,14 +122,26 @@ class Post extends React.Component {
         this.state = {
             edit: false
         };
+        this.toggleEdit = this.toggleEdit.bind(this);
+        this.submitEdit = this.submitEdit.bind(this);
+        this.delete = this.delete.bind(this);
     }
 
-    editMode(flag) {
+    toggleEdit(event) {
+        event.preventDefault();
+        this.setState({
+            edit: !this.state.edit
+        })
+    }
+
+    submitEdit(event) {
+        event.preventDefault();
 
     }
 
-    submitEdit() {
-
+    delete(event) {
+        event.preventDefault();
+        Axios.post('/api/post/delete/' + this.props.post.id).then(() => this.props.refresh());
     }
 
     componentDidMount() {
@@ -143,7 +150,15 @@ class Post extends React.Component {
 
     render() {
         return (
-            <PostDisplay post={this.props.post} users={this.props.users} />
+            <div className="post">
+                <PostDisplay post={this.props.post} users={this.props.users} />
+                <p/>
+                <div className="options">
+                    <a className="comments" href="#" >Comments</a>
+                    {(this.props.self && this.props.self.id === this.props.post.author) && <a className="edit" href="#" onClick={this.toggleEdit} >Edit</a>}
+                    {(this.props.self && (this.props.self.admin || this.props.self.id === this.props.post.author)) && <a className="delete" href="#" onClick={this.delete} >Delete</a>}
+                </div>
+            </div>
         )
     }
 
@@ -173,7 +188,7 @@ function PostDisplay(props) {
     }
 
     return (
-        <div className="post">
+        <div>
             <strong><Link to={"/profile/" + props.post.author}>{props.users[props.post.author] && props.users[props.post.author].name}</Link></strong>
             <span className="timestamp"><u> {timeSince(props.post.timestamp)} ago</u></span>
             <br/>

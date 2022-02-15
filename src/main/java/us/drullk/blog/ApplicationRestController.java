@@ -216,7 +216,7 @@ public class ApplicationRestController {
 	@PostMapping("/api/post/delete/{id}")
 	public ResponseEntity<?> editPost(HttpServletRequest request, @PathVariable Integer id) {
 		return ApplicationController.getSessionUser(request, userService).map(user -> postService.get(id).map(post -> {
-			if (post.getAuthor().equals(user.getId())) {
+			if (user.getAdmin() || post.getAuthor().equals(user.getId())) {
 				postService.delete(id);
 				return ResponseEntity.ok(jsonObject().put("success", "Post Deleted!"));
 			}

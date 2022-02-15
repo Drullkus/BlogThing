@@ -30,3 +30,22 @@
     float: right;
     font-size: 12px;
 }
+
+.options {
+    font-size: 12px;
+}
+
+.comments {
+    position: relative;
+    left: 10px;
+}
+
+.edit {
+    position: relative;
+    left: 25px;
+}
+
+.delete {
+    position: relative;
+    left: 40px;
+}
