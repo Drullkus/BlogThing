@@ -1,21 +1,41 @@
 version: "3.8" # https://docs.docker.com/compose/compose-file/compose-file-v3/
 
 services:
+  db:
+    image: 'postgres:13.1-alpine'
+    container_name: db
+    secrets:
+      - db_unlock_username
+      - db_unlock_password
+    environment:
+      - POSTGRES_USER_FILE=/run/secrets/db_unlock_username
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_unlock_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
   web:
-    container_name: blogging-machine
+    container_name: web
     build:
-      context: .
       dockerfile: gradle_built.dockerfile
-    # https://www.cloudbees.com/blog/ensuring-containers-are-always-running-with-dockers-restart-policy
-    # restart: on-failure # It will not restart on success-signalling error codes
     ports:
       - "8080:8080"
-    volumes:
-      - blogvolume:/tmp # placeholder FIXME actual directory
-    labels:
-      us.drullk.what: "This is a label"
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/compose-postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      # Using file contents for passwords instead of direct variables is a feature
+      # for Databases apparently, and is not a standardized expectation
+      # TODO Below info should be set for environment variables (SPRING_DATASOURCE_USERNAME & SPRING_DATASOURCE_PASSWORD)
+      #  Also Use same env vars for POSTGRES_USER & POSTGRES_PASSWORD once above is resolved
+      - SPRING_DATASOURCE_USERNAME=compose-postgres
+      - SPRING_DATASOURCE_PASSWORD=compose-postgres
 
-volumes: # https://docs.docker.com/compose/compose-file/compose-file-v3/#volume-configuration-reference
-  blogvolume:
-    name: blogappstorage
-    external: false
+secrets:
+  db_unlock_username:
+    file: ./secrets/username.txt
+  db_unlock_password:
+    file: ./secrets/password.txt
+
+volumes:
+  postgres-data:
