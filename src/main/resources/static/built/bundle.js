@@ -32766,16 +32766,28 @@ var Post = /*#__PURE__*/function (_React$Component3) {
   }, {
     key: "submitEdit",
     value: function submitEdit(event) {
+      var _this7 = this;
+
       event.preventDefault();
+      var text = document.forms["post_" + this.props.post.id].text;
+      Axios.post('/api/post/edit', {
+        'data': text.value,
+        'id': this.props.post.id
+      }).then(function () {
+        _this7.props.refresh();
+      });
+      this.setState({
+        edit: false
+      });
     }
   }, {
     key: "delete",
     value: function _delete(event) {
-      var _this7 = this;
+      var _this8 = this;
 
       event.preventDefault();
       Axios.post('/api/post/delete/' + this.props.post.id).then(function () {
-        return _this7.props.refresh();
+        return _this8.props.refresh();
       });
     }
   }, {
@@ -32784,7 +32796,7 @@ var Post = /*#__PURE__*/function (_React$Component3) {
   }, {
     key: "render",
     value: function render() {
-      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      if (!this.state.edit) return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
         className: "post"
       }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(PostDisplay, {
         post: this.props.post,
@@ -32802,7 +32814,27 @@ var Post = /*#__PURE__*/function (_React$Component3) {
         className: "delete",
         href: "#",
         onClick: this["delete"]
-      }, "Delete")));
+      }, "Delete")));else return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "post"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("form", {
+        name: "post_" + this.props.post.id,
+        onSubmit: this.submitEdit
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("textarea", {
+        name: "text",
+        rows: "10",
+        cols: "157",
+        defaultValue: this.props.post.text
+      }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("input", {
+        className: "button",
+        type: "submit",
+        value: "Finish"
+      })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "options"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("a", {
+        className: "edit",
+        href: "#",
+        onClick: this.toggleEdit
+      }, "Cancel")));
     }
   }]);
 
@@ -32830,7 +32862,7 @@ function PostDisplay(props) {
     to: "/profile/" + props.post.author
   }, props.users[props.post.author] && props.users[props.post.author].name)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", {
     className: "timestamp"
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("u", null, " ", timeSince(props.post.timestamp), " ago")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("br", null), props.post.text);
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("u", null, " ", timeSince(props.post.timestamp), " ago")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("br", null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("pre", null, props.post.text));
 }
 
 function ProfileWrapper(props) {
@@ -32848,30 +32880,30 @@ var Profile = /*#__PURE__*/function (_React$Component4) {
   var _super4 = _createSuper(Profile);
 
   function Profile(props) {
-    var _this8;
+    var _this9;
 
     _classCallCheck(this, Profile);
 
-    _this8 = _super4.call(this, props);
-    _this8.state = {
+    _this9 = _super4.call(this, props);
+    _this9.state = {
       id: props.id,
       user: {},
       posts: []
     };
-    _this8.refresh = _this8.refresh.bind(_assertThisInitialized(_this8));
-    return _this8;
+    _this9.refresh = _this9.refresh.bind(_assertThisInitialized(_this9));
+    return _this9;
   }
 
   _createClass(Profile, [{
     key: "componentDidMount",
     value: function componentDidMount() {
-      var _this9 = this;
+      var _this10 = this;
 
       Axios.get('/api/users/' + this.state.id).then(function (response) {
-        _this9.setState({
-          id: _this9.state.id,
+        _this10.setState({
+          id: _this10.state.id,
           user: response.data,
-          posts: _this9.state.posts
+          posts: _this10.state.posts
         });
       });
       this.refresh();
@@ -32879,7 +32911,7 @@ var Profile = /*#__PURE__*/function (_React$Component4) {
   }, {
     key: "refresh",
     value: function refresh() {
-      var _this10 = this;
+      var _this11 = this;
 
       Axios.post('/api/posts', {
         "author": Number(this.state.id)
@@ -32889,9 +32921,9 @@ var Profile = /*#__PURE__*/function (_React$Component4) {
           return postData.push(post);
         });
 
-        _this10.setState({
-          id: _this10.state.id,
-          user: _this10.state.user,
+        _this11.setState({
+          id: _this11.state.id,
+          user: _this11.state.user,
           posts: postData
         });
       });
@@ -32972,11 +33004,11 @@ function Poster(props) {
     placeholder: "Write something..."
   })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
     className: "center"
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("input", {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("input", {
     className: "button",
     type: "submit",
     value: "Post"
-  })))));
+  }))));
 }
 
 function Login(props) {
@@ -33030,16 +33062,16 @@ function Login(props) {
     required: true
   })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
     className: "section"
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("input", {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("input", {
     className: "button",
     type: "submit",
     value: "Login"
-  })))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+  }))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
     className: "section"
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
     className: "button",
     onClick: oAuth
-  }, "Login With GitHub"))));
+  }, "Login With GitHub")));
 }
 
 function Register(props) {
@@ -33098,11 +33130,11 @@ function Register(props) {
     required: true
   })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
     className: "section"
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("input", {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("input", {
     className: "button",
     type: "submit",
     value: "Register"
-  })))));
+  }))));
 }
 
 ReactDOM.render( /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(App, null), document.getElementById('react'));

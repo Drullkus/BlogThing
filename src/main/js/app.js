@@ -136,7 +136,16 @@ class Post extends React.Component {
 
     submitEdit(event) {
         event.preventDefault();
-
+        let {text} = document.forms["post_" + this.props.post.id];
+        Axios.post('/api/post/edit', {
+            'data': text.value,
+            'id': this.props.post.id
+        }).then(() => {
+            this.props.refresh();
+        });
+        this.setState({
+            edit: false
+        })
     }
 
     delete(event) {
@@ -149,17 +158,33 @@ class Post extends React.Component {
     }
 
     render() {
-        return (
-            <div className="post">
-                <PostDisplay post={this.props.post} users={this.props.users} />
-                <p/>
-                <div className="options">
-                    <a className="comments" href="#" >Comments</a>
-                    {(this.props.self && this.props.self.id === this.props.post.author) && <a className="edit" href="#" onClick={this.toggleEdit} >Edit</a>}
-                    {(this.props.self && (this.props.self.admin || this.props.self.id === this.props.post.author)) && <a className="delete" href="#" onClick={this.delete} >Delete</a>}
+        if (!this.state.edit)
+            return (
+                <div className="post">
+                    <PostDisplay post={this.props.post} users={this.props.users}/>
+                    <p/>
+                    <div className="options">
+                        <a className="comments" href="#">Comments</a>
+                        {(this.props.self && this.props.self.id === this.props.post.author) &&
+                        <a className="edit" href="#" onClick={this.toggleEdit}>Edit</a>}
+                        {(this.props.self && (this.props.self.admin || this.props.self.id === this.props.post.author)) &&
+                        <a className="delete" href="#" onClick={this.delete}>Delete</a>}
+                    </div>
                 </div>
-            </div>
-        )
+            )
+        else
+            return (
+                <div className="post">
+                    <form name={"post_" + this.props.post.id} onSubmit={this.submitEdit}>
+                        <textarea name="text" rows="10" cols="157" defaultValue={this.props.post.text}/>
+                        <p/>
+                        <input className="button" type="submit" value="Finish"/>
+                    </form>
+                    <div className="options">
+                        <a className="edit" href="#" onClick={this.toggleEdit}>Cancel</a>
+                    </div>
+                </div>
+            )
     }
 
 }
@@ -192,7 +217,7 @@ function PostDisplay(props) {
             <strong><Link to={"/profile/" + props.post.author}>{props.users[props.post.author] && props.users[props.post.author].name}</Link></strong>
             <span className="timestamp"><u> {timeSince(props.post.timestamp)} ago</u></span>
             <br/>
-            {props.post.text}
+            <pre>{props.post.text}</pre>
         </div>
     )
 }
@@ -293,9 +318,8 @@ function Poster(props) {
                 <textarea name="text" rows="10" cols="157" placeholder="Write something..."/>
                 </div>
                 <div className="center">
-                    <p>
-                        <input className="button" type="submit" value="Post"/>
-                    </p>
+                    <p />
+                    <input className="button" type="submit" value="Post"/>
                 </div>
             </form>
         </div>
@@ -339,15 +363,13 @@ function Login(props) {
                     <input className="entry" type="password" name="password" required/>
                 </div>
                 <div className="section">
-                    <p>
-                        <input className="button" type="submit" value="Login"/>
-                    </p>
+                    <p />
+                    <input className="button" type="submit" value="Login"/>
                 </div>
             </form>
             <div className="section">
-                <p>
-                    <button className="button" onClick={oAuth}>Login With GitHub</button>
-                </p>
+                <p />
+                <button className="button" onClick={oAuth}>Login With GitHub</button>
             </div>
         </div>
     );
@@ -391,9 +413,8 @@ function Register(props) {
                     <input className="entry" type="password" name="password" required/>
                 </div>
                 <div className="section">
-                    <p>
-                        <input className="button" type="submit" value="Register"/>
-                    </p>
+                    <p />
+                    <input className="button" type="submit" value="Register"/>
                 </div>
             </form>
         </div>
