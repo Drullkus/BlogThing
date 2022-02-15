@@ -31,7 +31,7 @@ public class ApplicationController {
 		this.userService = userService;
 	}
 
-	@RequestMapping({"/", "register"})
+	@RequestMapping({"/", "/register", "/login", "/profile/{id}"})
 	public String index(HttpServletRequest request, HttpServletResponse response) {
 		if (getSessionUser(request, userService).isEmpty())
 			killSession(response, userService, Optional.empty()); // Nuke the cookie if the session is invalid

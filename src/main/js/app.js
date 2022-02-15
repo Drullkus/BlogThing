@@ -1,72 +1,177 @@
 import React, {useState} from 'react';
-import Cookies from 'js-cookie';
-import {BrowserRouter as Router, Link, Route, Routes} from "react-router-dom";
+import {
+    BrowserRouter as Router,
+    Link,
+    Route,
+    Routes
+} from "react-router-dom";
+import {useParams} from "react-router";
 
 const ReactDOM = require('react-dom');
 const Axios = require('axios');
-
 
 class App extends React.Component {
 
     constructor(props) {
         super(props);
         this.state = {
-            authorized: !!Cookies.get('session'),
-            self: {}
         };
-        this.session = this.session.bind(this);
     }
 
     componentDidMount() {
-        if (this.state.authorized) {
-            Axios.get('/api/users/self').then(response => this.setState({
-                authorized: this.state.authorized,
-                self: response.data
-            }));
-        }
+
     }
 
-    session(valid, data) {
-        this.setState({
-            authorized: valid,
-            self: data
+    render() {
+        return (
+            <Router>
+                <Routes>
+                    <Route path="/" element={<Home />}/>
+                    <Route path="/profile/:id" element={<ProfileWrapper />}/>
+                    <Route path="/login" element={<Login />}/>
+                    <Route path="/register" element={<Register />}/>
+                </Routes>
+            </Router>
+        );
+    }
+}
+
+function logout() {
+    Axios.post('/api/user/logout')
+        .then(() => window.location.replace("/login"))
+        .catch(() => window.location.replace("/login"))
+}
+
+class Home extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            self: {},
+            posts: [],
+            userMap: {}
+        };
+    }
+
+    componentDidMount() {
+        Axios.get('/api/users/self').
+        then(response => this.setState({
+            self: response.data,
+            posts: this.state.posts,
+            userMap: this.state.userMap
+        })).
+        catch(() => window.location.replace("/login"));
+
+        Axios.post('/api/posts').then(response => {
+            let postData = [];
+            let map = {};
+            let cache = [];
+            response.data.data && response.data.data.forEach(post => {
+                let authorId = post.author;
+                if (!cache.includes(authorId)) {
+                    cache.push(authorId);
+                    Axios.get('/api/users/' + authorId).then(r => {
+                        let user = r.data;
+                        map[user.id] = user;
+                        this.setState({
+                            self: this.state.self,
+                            posts: this.state.posts,
+                            userMap: map
+                        });
+                    })
+                }
+                postData.push(post);
+            });
+            this.setState({
+                self: this.state.self,
+                posts: postData,
+                userMap: this.state.userMap
+            });
         });
     }
 
     render() {
-        if (this.state.authorized) {
-            return (<Profile session={this.session} data={this.state.self}/>);
-        } else {
-            return (
-                <Router>
-                    <Routes>
-                        <Route path="/" element={<Login session={this.session}/>}/>
-                        <Route path="/register" element={<Register session={this.session}/>}/>
-                    </Routes>
-                </Router>
-            );
-        }
+        let posts = [];
+        this.state.posts.forEach(p => posts.push(<Post key={p.id} post={p} users={this.state.userMap}/>))
+        return (
+            <div className="main">
+                <div className="section">
+                    <button className="button" onClick={logout}>Logout</button>
+                </div>
+                <div className="section">
+                    <h1>Home</h1>
+                </div>
+                {posts}
+            </div>
+        )
     }
 }
 
-function Profile(props) {
-
-    function logout() {
-        Axios.post('/api/user/logout')
-            .then(() => props.session(false))
-            .catch(() => props.session(false))
-    }
+function Post(props) {
 
     return (
-        <div className="main">
-            <div className="section">
-                <button className="button" onClick={logout}>Logout</button>
-            </div>
-            <div className="section">
-                <h1>{props.data && props.data.name}'s Profile</h1>
-            </div>
+        <div className="post">
+            <strong>{props.users[props.post.author] && props.users[props.post.author].name}</strong><br/>
+            {props.post.text}
         </div>
     )
+
+}
+
+function ProfileWrapper(props) {
+    const { id } = useParams();
+    return (<Profile id={id}/>)
+}
+
+class Profile extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            id: props.id,
+            user: {},
+            posts: []
+        };
+    }
+
+    componentDidMount() {
+        Axios.get('/api/users/' + this.state.id).then(response => {
+            this.setState({
+                id: this.state.id,
+                user: response.data,
+                posts: this.state.posts
+            });
+        });
+        Axios.post('/api/posts', {
+            "author": this.state.id
+        }).then(response => {
+            let postData = [];
+            response.data.data && response.data.data.forEach(post => postData.push(post));
+            this.setState({
+                id: this.state.id,
+                user: this.state.user,
+                posts: postData
+            });
+        });
+    }
+
+    render() {
+        let posts = [];
+        let userData = {};
+        userData[this.state.id] = this.state.user;
+        this.state.posts.forEach(p => posts.push(<Post key={p.id} post={p} users={userData}/>))
+        return (
+            <div className="main">
+                <div className="section">
+                    <button className="button" onClick={logout}>Logout</button>
+                </div>
+                <div className="section">
+                    <h1>{this.state.user && this.state.user.name}'s Profile</h1>
+                </div>
+                {posts}
+            </div>
+        )
+    }
 
 }
 
@@ -80,7 +185,7 @@ function Login(props) {
         Axios.post('/api/user/login', {
             'email': email.value,
             'password': password.value
-        }).then((response) => props.session(true, response.data.user))
+        }).then(() => window.location.replace("/"))
             .catch(error => setResult(error.response.data));
     }
 
@@ -89,7 +194,7 @@ function Login(props) {
     }
 
     return (
-        <div className="main">
+        <div className="login">
             <div className="section">
                 <Link to="/register">Register</Link>
             </div>
@@ -132,14 +237,14 @@ function Register(props) {
             'email': email.value,
             'name': name.value,
             'password': password.value
-        }).then((response) => props.session(true, response.data.user))
+        }).then(() => window.location.replace("/"))
             .catch(error => setResult(error.response.data));
     }
 
     return (
-        <div className="main">
+        <div className="login">
             <div className="section">
-                <Link to="/">Login</Link>
+                <Link to="/login">Login</Link>
             </div>
             <div className="section">
                 <h1>{result.error}</h1>

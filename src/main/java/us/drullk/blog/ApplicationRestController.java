@@ -139,10 +139,10 @@ public class ApplicationRestController {
 	 * Output: [Integer page, Integer size, Integer pages, List Post data]
 	 */
 	@PostMapping("/api/posts")
-	public ResponseEntity<JsonNode> getPosts(@RequestBody JsonNode body) {
-		JsonNode author = body.get("author");
-		JsonNode page = body.get("page");
-		JsonNode size = body.get("size");
+	public ResponseEntity<JsonNode> getPosts(@RequestBody(required = false) JsonNode body) {
+		JsonNode author = body == null ? null : body.get("author");
+		JsonNode page = body == null ? null : body.get("page");
+		JsonNode size = body == null ? null : body.get("size");
 		int p = page == null || !page.isInt() || page.asInt() < 0 ? 0 : page.asInt();
 		int s = size == null || !size.isInt() || size.asInt() <= 0 || size.asInt() > 50 ? 50 : size.asInt();
 		Sort sort = Sort.by(Sort.Direction.DESC, "timestamp");

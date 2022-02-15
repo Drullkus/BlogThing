@@ -1,5 +1,10 @@
-.main {
+.login {
     width: 200px;
+    margin: 0 auto;
+}
+
+.main {
+    width: 1200px;
     margin: 0 auto;
 }
 
@@ -13,4 +18,8 @@
 
 .entry {
     width: 192px
+}
+
+.post {
+    border: 2px solid black
 }
