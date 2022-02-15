@@ -32613,9 +32613,9 @@ var App = /*#__PURE__*/function (_React$Component) {
 
 function logout() {
   Axios.post('/api/user/logout').then(function () {
-    return window.location.replace("/login");
+    return window.location.href = "/login";
   })["catch"](function () {
-    return window.location.replace("/login");
+    return window.location.href = "/login";
   });
 }
 
@@ -32635,6 +32635,8 @@ var Home = /*#__PURE__*/function (_React$Component2) {
       posts: [],
       userMap: {}
     };
+    _this2.profile = _this2.profile.bind(_assertThisInitialized(_this2));
+    _this2.refresh = _this2.refresh.bind(_assertThisInitialized(_this2));
     return _this2;
   }
 
@@ -32650,8 +32652,15 @@ var Home = /*#__PURE__*/function (_React$Component2) {
           userMap: _this3.state.userMap
         });
       })["catch"](function () {
-        return window.location.replace("/login");
+        return window.location.href = "/login";
       });
+      this.refresh();
+    }
+  }, {
+    key: "refresh",
+    value: function refresh() {
+      var _this4 = this;
+
       Axios.post('/api/posts').then(function (response) {
         var postData = [];
         var map = {};
@@ -32659,15 +32668,15 @@ var Home = /*#__PURE__*/function (_React$Component2) {
         response.data.data && response.data.data.forEach(function (post) {
           var authorId = post.author;
 
-          if (!cache.includes(authorId)) {
+          if (!_this4.state.userMap[authorId] && !cache.includes(authorId)) {
             cache.push(authorId);
             Axios.get('/api/users/' + authorId).then(function (r) {
               var user = r.data;
               map[user.id] = user;
 
-              _this3.setState({
-                self: _this3.state.self,
-                posts: _this3.state.posts,
+              _this4.setState({
+                self: _this4.state.self,
+                posts: _this4.state.posts,
                 userMap: map
               });
             });
@@ -32676,24 +32685,29 @@ var Home = /*#__PURE__*/function (_React$Component2) {
           postData.push(post);
         });
 
-        _this3.setState({
-          self: _this3.state.self,
+        _this4.setState({
+          self: _this4.state.self,
           posts: postData,
-          userMap: _this3.state.userMap
+          userMap: _this4.state.userMap
         });
       });
     }
   }, {
+    key: "profile",
+    value: function profile() {
+      this.state.self.id && (window.location.href = "/profile/" + this.state.self.id);
+    }
+  }, {
     key: "render",
     value: function render() {
-      var _this4 = this;
+      var _this5 = this;
 
       var posts = [];
       this.state.posts.forEach(function (p) {
         return posts.push( /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Post, {
           key: p.id,
           post: p,
-          users: _this4.state.userMap
+          users: _this5.state.userMap
         }));
       });
       return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
@@ -32704,18 +32718,84 @@ var Home = /*#__PURE__*/function (_React$Component2) {
         className: "button",
         onClick: logout
       }, "Logout")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "center"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+        className: "button",
+        onClick: this.profile
+      }, "My Profile")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
         className: "section"
-      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null, "Home")), posts);
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null, "Home")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Poster, {
+        refresh: this.refresh
+      }), posts);
     }
   }]);
 
   return Home;
 }(react__WEBPACK_IMPORTED_MODULE_0___default.a.Component);
 
-function Post(props) {
+var Post = /*#__PURE__*/function (_React$Component3) {
+  _inherits(Post, _React$Component3);
+
+  var _super3 = _createSuper(Post);
+
+  function Post(props) {
+    var _this6;
+
+    _classCallCheck(this, Post);
+
+    _this6 = _super3.call(this, props);
+    _this6.state = {
+      edit: false
+    };
+    return _this6;
+  }
+
+  _createClass(Post, [{
+    key: "editMode",
+    value: function editMode(flag) {}
+  }, {
+    key: "submitEdit",
+    value: function submitEdit() {}
+  }, {
+    key: "componentDidMount",
+    value: function componentDidMount() {}
+  }, {
+    key: "render",
+    value: function render() {
+      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(PostDisplay, {
+        post: this.props.post,
+        users: this.props.users
+      });
+    }
+  }]);
+
+  return Post;
+}(react__WEBPACK_IMPORTED_MODULE_0___default.a.Component);
+
+function PostDisplay(props) {
+  function timeSince(timestamp) {
+    var date = new Date(timestamp * 1000);
+    var seconds = Math.floor((new Date() - date) / 1000);
+    var interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + " years";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + " months";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + " days";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + " hours";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + " minutes";
+    return Math.floor(seconds) + " seconds";
+  }
+
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
     className: "post"
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("strong", null, props.users[props.post.author] && props.users[props.post.author].name), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("br", null), props.post.text);
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("strong", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_1__["Link"], {
+    to: "/profile/" + props.post.author
+  }, props.users[props.post.author] && props.users[props.post.author].name)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", {
+    className: "timestamp"
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("u", null, " ", timeSince(props.post.timestamp), " ago")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("br", null), props.post.text);
 }
 
 function ProfileWrapper(props) {
@@ -32727,51 +32807,64 @@ function ProfileWrapper(props) {
   });
 }
 
-var Profile = /*#__PURE__*/function (_React$Component3) {
-  _inherits(Profile, _React$Component3);
+var Profile = /*#__PURE__*/function (_React$Component4) {
+  _inherits(Profile, _React$Component4);
 
-  var _super3 = _createSuper(Profile);
+  var _super4 = _createSuper(Profile);
 
   function Profile(props) {
-    var _this5;
+    var _this7;
 
     _classCallCheck(this, Profile);
 
-    _this5 = _super3.call(this, props);
-    _this5.state = {
+    _this7 = _super4.call(this, props);
+    _this7.state = {
       id: props.id,
       user: {},
       posts: []
     };
-    return _this5;
+    _this7.refresh = _this7.refresh.bind(_assertThisInitialized(_this7));
+    return _this7;
   }
 
   _createClass(Profile, [{
     key: "componentDidMount",
     value: function componentDidMount() {
-      var _this6 = this;
+      var _this8 = this;
 
       Axios.get('/api/users/' + this.state.id).then(function (response) {
-        _this6.setState({
-          id: _this6.state.id,
+        _this8.setState({
+          id: _this8.state.id,
           user: response.data,
-          posts: _this6.state.posts
+          posts: _this8.state.posts
         });
       });
+      this.refresh();
+    }
+  }, {
+    key: "refresh",
+    value: function refresh() {
+      var _this9 = this;
+
       Axios.post('/api/posts', {
-        "author": this.state.id
+        "author": Number(this.state.id)
       }).then(function (response) {
         var postData = [];
         response.data.data && response.data.data.forEach(function (post) {
           return postData.push(post);
         });
 
-        _this6.setState({
-          id: _this6.state.id,
-          user: _this6.state.user,
+        _this9.setState({
+          id: _this9.state.id,
+          user: _this9.state.user,
           posts: postData
         });
       });
+    }
+  }, {
+    key: "home",
+    value: function home() {
+      window.location.href = "/";
     }
   }, {
     key: "render",
@@ -32781,6 +32874,7 @@ var Profile = /*#__PURE__*/function (_React$Component3) {
       userData[this.state.id] = this.state.user;
       this.state.posts.forEach(function (p) {
         return posts.push( /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Post, {
+          key: p.id,
           post: p,
           users: userData
         }));
@@ -32793,19 +32887,68 @@ var Profile = /*#__PURE__*/function (_React$Component3) {
         className: "button",
         onClick: logout
       }, "Logout")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "center"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+        className: "button",
+        onClick: this.home
+      }, "Home")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
         className: "section"
-      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null, this.state.user && this.state.user.name, "'s Profile")), posts);
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null, this.state.user && this.state.user.name, "'s Profile")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Poster, {
+        refresh: this.refresh
+      }), posts);
     }
   }]);
 
   return Profile;
 }(react__WEBPACK_IMPORTED_MODULE_0___default.a.Component);
 
-function Login(props) {
+function Poster(props) {
   var _useState = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])({}),
       _useState2 = _slicedToArray(_useState, 2),
       result = _useState2[0],
       setResult = _useState2[1];
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    var text = document.forms[0].text;
+    Axios.post('/api/post/submit', {
+      'data': text.value
+    }).then(function () {
+      setResult({});
+      props.refresh();
+    })["catch"](function (error) {
+      return setResult(error.response.data);
+    });
+    text.value = "";
+  }
+
+  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+    className: "section"
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+    className: "section"
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null, result.error)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("form", {
+    onSubmit: handleSubmit
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+    className: "section"
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("textarea", {
+    name: "text",
+    rows: "10",
+    cols: "157",
+    placeholder: "Write something..."
+  })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+    className: "center"
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("input", {
+    className: "button",
+    type: "submit",
+    value: "Post"
+  })))));
+}
+
+function Login(props) {
+  var _useState3 = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])({}),
+      _useState4 = _slicedToArray(_useState3, 2),
+      result = _useState4[0],
+      setResult = _useState4[1];
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -32816,7 +32959,7 @@ function Login(props) {
       'email': email.value,
       'password': password.value
     }).then(function () {
-      return window.location.replace("/");
+      return window.location.href = "/";
     })["catch"](function (error) {
       return setResult(error.response.data);
     });
@@ -32827,7 +32970,7 @@ function Login(props) {
   }
 
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-    className: "login"
+    className: "center"
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
     className: "section"
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_1__["Link"], {
@@ -32865,10 +33008,10 @@ function Login(props) {
 }
 
 function Register(props) {
-  var _useState3 = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])({}),
-      _useState4 = _slicedToArray(_useState3, 2),
-      result = _useState4[0],
-      setResult = _useState4[1];
+  var _useState5 = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])({}),
+      _useState6 = _slicedToArray(_useState5, 2),
+      result = _useState6[0],
+      setResult = _useState6[1];
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -32881,14 +33024,14 @@ function Register(props) {
       'name': name.value,
       'password': password.value
     }).then(function () {
-      return window.location.replace("/");
+      return window.location.href = "/";
     })["catch"](function (error) {
       return setResult(error.response.data);
     });
   }
 
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-    className: "login"
+    className: "center"
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
     className: "section"
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_1__["Link"], {

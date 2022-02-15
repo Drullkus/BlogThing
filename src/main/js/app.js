@@ -38,8 +38,8 @@ class App extends React.Component {
 
 function logout() {
     Axios.post('/api/user/logout')
-        .then(() => window.location.replace("/login"))
-        .catch(() => window.location.replace("/login"))
+        .then(() => window.location.href = "/login")
+        .catch(() => window.location.href = "/login")
 }
 
 class Home extends React.Component {
@@ -51,6 +51,8 @@ class Home extends React.Component {
             posts: [],
             userMap: {}
         };
+        this.profile = this.profile.bind(this);
+        this.refresh = this.refresh.bind(this);
     }
 
     componentDidMount() {
@@ -60,15 +62,18 @@ class Home extends React.Component {
             posts: this.state.posts,
             userMap: this.state.userMap
         })).
-        catch(() => window.location.replace("/login"));
+        catch(() => window.location.href = "/login");
+        this.refresh();
+    }
 
+    refresh() {
         Axios.post('/api/posts').then(response => {
             let postData = [];
             let map = {};
             let cache = [];
             response.data.data && response.data.data.forEach(post => {
                 let authorId = post.author;
-                if (!cache.includes(authorId)) {
+                if (!this.state.userMap[authorId] && !cache.includes(authorId)) {
                     cache.push(authorId);
                     Axios.get('/api/users/' + authorId).then(r => {
                         let user = r.data;
@@ -90,6 +95,10 @@ class Home extends React.Component {
         });
     }
 
+    profile() {
+        this.state.self.id && (window.location.href = "/profile/" + this.state.self.id);
+    }
+
     render() {
         let posts = [];
         this.state.posts.forEach(p => posts.push(<Post key={p.id} post={p} users={this.state.userMap}/>))
@@ -98,24 +107,79 @@ class Home extends React.Component {
                 <div className="section">
                     <button className="button" onClick={logout}>Logout</button>
                 </div>
+                <div className="center">
+                    <button className="button" onClick={this.profile}>My Profile</button>
+                </div>
                 <div className="section">
                     <h1>Home</h1>
                 </div>
+                <Poster refresh={this.refresh}/>
                 {posts}
             </div>
         )
     }
 }
 
-function Post(props) {
+class Post extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            edit: false
+        };
+    }
+
+    editMode(flag) {
+
+    }
+
+    submitEdit() {
+
+    }
+
+    componentDidMount() {
+
+    }
+
+    render() {
+        return (
+            <PostDisplay post={this.props.post} users={this.props.users} />
+        )
+    }
+
+}
+
+function PostDisplay(props) {
+
+    function timeSince(timestamp) {
+        let date = new Date(timestamp * 1000);
+        let seconds = Math.floor((new Date() - date) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1)
+            return Math.floor(interval) + " years";
+        interval = seconds / 2592000;
+        if (interval > 1)
+            return Math.floor(interval) + " months";
+        interval = seconds / 86400;
+        if (interval > 1)
+            return Math.floor(interval) + " days";
+        interval = seconds / 3600;
+        if (interval > 1)
+            return Math.floor(interval) + " hours";
+        interval = seconds / 60;
+        if (interval > 1)
+            return Math.floor(interval) + " minutes";
+        return Math.floor(seconds) + " seconds";
+    }
 
     return (
         <div className="post">
-            <strong>{props.users[props.post.author] && props.users[props.post.author].name}</strong><br/>
+            <strong><Link to={"/profile/" + props.post.author}>{props.users[props.post.author] && props.users[props.post.author].name}</Link></strong>
+            <span className="timestamp"><u> {timeSince(props.post.timestamp)} ago</u></span>
+            <br/>
             {props.post.text}
         </div>
     )
-
 }
 
 function ProfileWrapper(props) {
@@ -132,6 +196,7 @@ class Profile extends React.Component {
             user: {},
             posts: []
         };
+        this.refresh = this.refresh.bind(this);
     }
 
     componentDidMount() {
@@ -142,8 +207,12 @@ class Profile extends React.Component {
                 posts: this.state.posts
             });
         });
+        this.refresh();
+    }
+
+    refresh() {
         Axios.post('/api/posts', {
-            "author": this.state.id
+            "author": Number(this.state.id)
         }).then(response => {
             let postData = [];
             response.data.data && response.data.data.forEach(post => postData.push(post));
@@ -153,6 +222,10 @@ class Profile extends React.Component {
                 posts: postData
             });
         });
+    }
+
+    home() {
+        window.location.href = "/";
     }
 
     render() {
@@ -165,13 +238,53 @@ class Profile extends React.Component {
                 <div className="section">
                     <button className="button" onClick={logout}>Logout</button>
                 </div>
+                <div className="center">
+                    <button className="button" onClick={this.home}>Home</button>
+                </div>
                 <div className="section">
                     <h1>{this.state.user && this.state.user.name}'s Profile</h1>
                 </div>
+                <Poster refresh={this.refresh}/>
                 {posts}
             </div>
         )
     }
+
+}
+
+function Poster(props) {
+
+    const [result, setResult] = useState({});
+
+    function handleSubmit(event) {
+        event.preventDefault();
+        let {text} = document.forms[0];
+        Axios.post('/api/post/submit', {
+            'data': text.value
+        }).then(() => {
+            setResult({});
+            props.refresh();
+        }).catch(error => setResult(error.response.data));
+        text.value = "";
+    }
+
+    return (
+        <div className="section">
+            <div className="section">
+                <h1>{result.error}</h1>
+            </div>
+            <form onSubmit={handleSubmit}>
+                <div className="section">
+                <textarea name="text" rows="10" cols="157" placeholder="Write something..."/>
+                </div>
+                <div className="center">
+                    <p>
+                        <input className="button" type="submit" value="Post"/>
+                    </p>
+                </div>
+            </form>
+        </div>
+    )
 
 }
 
@@ -185,7 +298,7 @@ function Login(props) {
         Axios.post('/api/user/login', {
             'email': email.value,
             'password': password.value
-        }).then(() => window.location.replace("/"))
+        }).then(() => window.location.href = "/")
             .catch(error => setResult(error.response.data));
     }
 
@@ -194,7 +307,7 @@ function Login(props) {
     }
 
     return (
-        <div className="login">
+        <div className="center">
             <div className="section">
                 <Link to="/register">Register</Link>
             </div>
@@ -237,12 +350,12 @@ function Register(props) {
             'email': email.value,
             'name': name.value,
             'password': password.value
-        }).then(() => window.location.replace("/"))
+        }).then(() => window.location.href = "/")
             .catch(error => setResult(error.response.data));
     }
 
     return (
-        <div className="login">
+        <div className="center">
             <div className="section">
                 <Link to="/login">Login</Link>
             </div>

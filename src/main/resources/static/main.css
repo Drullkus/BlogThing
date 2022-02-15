@@ -1,4 +1,4 @@
-.login {
+.center {
     width: 200px;
     margin: 0 auto;
 }
@@ -13,13 +13,20 @@
 }
 
 .button {
-    width: 200px
+    width: 200px;
 }
 
 .entry {
-    width: 192px
+    width: 192px;
 }
 
 .post {
-    border: 2px solid black
+    border: 2px solid black;
+    padding: 2px;
+    margin: 5px;
+}
+
+.timestamp {
+    float: right;
+    font-size: 12px;
 }
