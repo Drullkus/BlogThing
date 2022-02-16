@@ -32599,6 +32599,9 @@ var App = /*#__PURE__*/function (_React$Component) {
         path: "/profile/:id",
         element: /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(ProfileWrapper, null)
       }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_1__["Route"], {
+        path: "/post/:id",
+        element: /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(CommentSectionWrapper, null)
+      }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_1__["Route"], {
         path: "/login",
         element: /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Login, null)
       }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_1__["Route"], {
@@ -32617,6 +32620,22 @@ function logout() {
   })["catch"](function () {
     return window.location.href = "/login";
   });
+}
+
+function timeSince(timestamp) {
+  var date = new Date(timestamp * 1000);
+  var seconds = Math.floor((new Date() - date) / 1000);
+  var interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + " years";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + " months";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + " days";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + " hours";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + " minutes";
+  return Math.floor(seconds) + " seconds";
 }
 
 var Home = /*#__PURE__*/function (_React$Component2) {
@@ -32645,6 +32664,7 @@ var Home = /*#__PURE__*/function (_React$Component2) {
     value: function componentDidMount() {
       var _this3 = this;
 
+      document.title = "Home";
       Axios.get('/api/users/self').then(function (response) {
         return _this3.setState({
           self: response.data,
@@ -32706,6 +32726,7 @@ var Home = /*#__PURE__*/function (_React$Component2) {
       this.state.posts.forEach(function (p) {
         return posts.push( /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Post, {
           key: p.id,
+          type: "post",
           post: p,
           users: _this5.state.userMap,
           self: _this5.state.self,
@@ -32735,24 +32756,302 @@ var Home = /*#__PURE__*/function (_React$Component2) {
   return Home;
 }(react__WEBPACK_IMPORTED_MODULE_0___default.a.Component);
 
-var Post = /*#__PURE__*/function (_React$Component3) {
-  _inherits(Post, _React$Component3);
+function ProfileWrapper(props) {
+  var _useParams = Object(react_router__WEBPACK_IMPORTED_MODULE_2__["useParams"])(),
+      id = _useParams.id;
 
-  var _super3 = _createSuper(Post);
+  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Profile, {
+    id: id
+  });
+}
 
-  function Post(props) {
+var Profile = /*#__PURE__*/function (_React$Component3) {
+  _inherits(Profile, _React$Component3);
+
+  var _super3 = _createSuper(Profile);
+
+  function Profile(props) {
     var _this6;
 
-    _classCallCheck(this, Post);
+    _classCallCheck(this, Profile);
 
     _this6 = _super3.call(this, props);
     _this6.state = {
+      self: {},
+      user: {},
+      posts: []
+    };
+    _this6.refresh = _this6.refresh.bind(_assertThisInitialized(_this6));
+    return _this6;
+  }
+
+  _createClass(Profile, [{
+    key: "componentDidMount",
+    value: function componentDidMount() {
+      var _this7 = this;
+
+      document.title = "Profile";
+      Axios.get('/api/users/self').then(function (response) {
+        return _this7.setState({
+          self: response.data,
+          user: _this7.state.user,
+          posts: _this7.state.posts
+        });
+      });
+      Axios.get('/api/users/' + this.props.id).then(function (response) {
+        _this7.setState({
+          user: response.data,
+          posts: _this7.state.posts
+        });
+      });
+      this.refresh();
+    }
+  }, {
+    key: "refresh",
+    value: function refresh() {
+      var _this8 = this;
+
+      Axios.post('/api/posts', {
+        "author": Number(this.props.id)
+      }).then(function (response) {
+        var postData = [];
+        response.data.data && response.data.data.forEach(function (post) {
+          return postData.push(post);
+        });
+
+        _this8.setState({
+          user: _this8.state.user,
+          posts: postData
+        });
+      });
+    }
+  }, {
+    key: "home",
+    value: function home() {
+      window.location.href = "/";
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this9 = this;
+
+      var posts = [];
+      var userData = {};
+      userData[this.props.id] = this.state.user;
+      this.state.posts.forEach(function (p) {
+        return posts.push( /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Post, {
+          key: p.id,
+          type: "post",
+          post: p,
+          users: userData,
+          self: _this9.state.user
+        }));
+      });
+      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "main"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "section"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+        className: "button",
+        onClick: logout
+      }, "Logout")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "center"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+        className: "button",
+        onClick: this.home
+      }, "Home")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "section"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null, this.state.user && this.state.user.name, "'s Profile")), this.state.self.id === this.state.user.id && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Poster, {
+        refresh: this.refresh
+      }), posts);
+    }
+  }]);
+
+  return Profile;
+}(react__WEBPACK_IMPORTED_MODULE_0___default.a.Component);
+
+function CommentSectionWrapper(props) {
+  var _useParams2 = Object(react_router__WEBPACK_IMPORTED_MODULE_2__["useParams"])(),
+      id = _useParams2.id;
+
+  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(CommentSection, {
+    id: id
+  });
+}
+
+var CommentSection = /*#__PURE__*/function (_React$Component4) {
+  _inherits(CommentSection, _React$Component4);
+
+  var _super4 = _createSuper(CommentSection);
+
+  function CommentSection(props) {
+    var _this10;
+
+    _classCallCheck(this, CommentSection);
+
+    _this10 = _super4.call(this, props);
+    _this10.state = {
+      comments: [],
+      post: {},
+      self: {},
+      userMap: {}
+    };
+    _this10.refresh = _this10.refresh.bind(_assertThisInitialized(_this10));
+    return _this10;
+  }
+
+  _createClass(CommentSection, [{
+    key: "componentDidMount",
+    value: function componentDidMount() {
+      var _this11 = this;
+
+      document.title = "Comments";
+      Axios.get('/api/users/self').then(function (response) {
+        _this11.setState({
+          comments: _this11.state.comments,
+          post: _this11.state.posts,
+          self: response.data,
+          userMap: _this11.state.userMap
+        });
+
+        Axios.get('/api/posts/' + Number(_this11.props.id)).then(function (response) {
+          _this11.setState({
+            comments: _this11.state.comments,
+            post: response.data,
+            self: _this11.state.self,
+            userMap: _this11.state.userMap
+          });
+
+          _this11.refresh();
+        })["catch"](function () {
+          return window.location.href = "/";
+        });
+      })["catch"](function () {
+        return window.location.href = "/login";
+      });
+    }
+  }, {
+    key: "refresh",
+    value: function refresh() {
+      var _this12 = this;
+
+      Axios.post('/api/comments', {
+        'post': Number(this.props.id)
+      }).then(function (response) {
+        var commentData = [];
+        var map = {};
+        var cache = [];
+        _this12.state.post && Axios.get('/api/users/' + _this12.state.post.author).then(function (res) {
+          map[_this12.state.post.author] = res.data;
+
+          _this12.setState({
+            comments: _this12.state.comments,
+            post: _this12.state.post,
+            self: _this12.state.self,
+            userMap: map
+          });
+
+          response.data.data && response.data.data.forEach(function (comment) {
+            var authorId = comment.author;
+
+            if (!_this12.state.userMap[authorId] && !cache.includes(authorId)) {
+              cache.push(authorId);
+              Axios.get('/api/users/' + authorId).then(function (r) {
+                var user = r.data;
+                map[user.id] = user;
+
+                _this12.setState({
+                  comments: _this12.state.comments,
+                  post: _this12.state.post,
+                  self: _this12.state.self,
+                  userMap: map
+                });
+              });
+            }
+
+            commentData.push(comment);
+          });
+
+          _this12.setState({
+            comments: commentData,
+            post: _this12.state.post,
+            self: _this12.state.self,
+            userMap: _this12.state.userMap
+          });
+        });
+      });
+    }
+  }, {
+    key: "home",
+    value: function home() {
+      window.location.href = "/";
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this13 = this;
+
+      var comments = [];
+      this.state.comments.forEach(function (p) {
+        return comments.push( /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Post, {
+          key: p.id,
+          type: "comment",
+          post: p,
+          users: _this13.state.userMap,
+          self: _this13.state.self,
+          refresh: _this13.refresh
+        }));
+      });
+      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "main"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "section"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+        className: "button",
+        onClick: logout
+      }, "Logout")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "center"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
+        className: "button",
+        onClick: this.home
+      }, "Home")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+        className: "section"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null, "Comments")), this.state.post && this.state.self && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Post, {
+        key: "parent",
+        parent: true,
+        type: "post",
+        post: this.state.post,
+        users: this.state.userMap,
+        self: this.state.self,
+        refresh: this.refresh
+      }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Poster, {
+        parent: this.props.id,
+        refresh: this.refresh
+      }), comments);
+    }
+  }]);
+
+  return CommentSection;
+}(react__WEBPACK_IMPORTED_MODULE_0___default.a.Component);
+
+var Post = /*#__PURE__*/function (_React$Component5) {
+  _inherits(Post, _React$Component5);
+
+  var _super5 = _createSuper(Post);
+
+  function Post(props) {
+    var _this14;
+
+    _classCallCheck(this, Post);
+
+    _this14 = _super5.call(this, props);
+    _this14.state = {
       edit: false
     };
-    _this6.toggleEdit = _this6.toggleEdit.bind(_assertThisInitialized(_this6));
-    _this6.submitEdit = _this6.submitEdit.bind(_assertThisInitialized(_this6));
-    _this6["delete"] = _this6["delete"].bind(_assertThisInitialized(_this6));
-    return _this6;
+    _this14.toggleEdit = _this14.toggleEdit.bind(_assertThisInitialized(_this14));
+    _this14.submitEdit = _this14.submitEdit.bind(_assertThisInitialized(_this14));
+    _this14["delete"] = _this14["delete"].bind(_assertThisInitialized(_this14));
+    return _this14;
   }
 
   _createClass(Post, [{
@@ -32766,15 +33065,15 @@ var Post = /*#__PURE__*/function (_React$Component3) {
   }, {
     key: "submitEdit",
     value: function submitEdit(event) {
-      var _this7 = this;
+      var _this15 = this;
 
       event.preventDefault();
-      var text = document.forms["post_" + this.props.post.id].text;
-      Axios.post('/api/post/edit', {
+      var text = document.forms["post_" + this.props.type + "_" + this.props.post.id].text;
+      Axios.post('/api/' + this.props.type + '/edit', {
         'data': text.value,
         'id': this.props.post.id
       }).then(function () {
-        _this7.props.refresh();
+        _this15.props.refresh();
       });
       this.setState({
         edit: false
@@ -32783,11 +33082,11 @@ var Post = /*#__PURE__*/function (_React$Component3) {
   }, {
     key: "delete",
     value: function _delete(event) {
-      var _this8 = this;
+      var _this16 = this;
 
       event.preventDefault();
-      Axios.post('/api/post/delete/' + this.props.post.id).then(function () {
-        return _this8.props.refresh();
+      Axios.get('/api/' + this.props.type + '/delete/' + this.props.post.id).then(function () {
+        return _this16.props.refresh();
       });
     }
   }, {
@@ -32798,14 +33097,14 @@ var Post = /*#__PURE__*/function (_React$Component3) {
     value: function render() {
       if (!this.state.edit) return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
         className: "post"
-      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(PostDisplay, {
-        post: this.props.post,
-        users: this.props.users
-      }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("strong", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_1__["Link"], {
+        to: "/profile/" + this.props.post.author
+      }, this.props.users[this.props.post.author] && this.props.users[this.props.post.author].name)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", {
+        className: "timestamp"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("u", null, timeSince(this.props.post.timestamp), " ago")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("br", null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("pre", null, this.props.post.text), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
         className: "options"
-      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("a", {
-        className: "comments",
-        href: "#"
+      }, this.props.type === "post" && !this.props.parent && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_1__["Link"], {
+        to: "/post/" + this.props.post.id
       }, "Comments"), this.props.self && this.props.self.id === this.props.post.author && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("a", {
         className: "edit",
         href: "#",
@@ -32817,7 +33116,7 @@ var Post = /*#__PURE__*/function (_React$Component3) {
       }, "Delete")));else return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
         className: "post"
       }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("form", {
-        name: "post_" + this.props.post.id,
+        name: "post_" + this.props.type + "_" + this.props.post.id,
         onSubmit: this.submitEdit
       }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("textarea", {
         name: "text",
@@ -32841,134 +33140,6 @@ var Post = /*#__PURE__*/function (_React$Component3) {
   return Post;
 }(react__WEBPACK_IMPORTED_MODULE_0___default.a.Component);
 
-function PostDisplay(props) {
-  function timeSince(timestamp) {
-    var date = new Date(timestamp * 1000);
-    var seconds = Math.floor((new Date() - date) / 1000);
-    var interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + " years";
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + " months";
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + " days";
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + " hours";
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + " minutes";
-    return Math.floor(seconds) + " seconds";
-  }
-
-  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("strong", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react_router_dom__WEBPACK_IMPORTED_MODULE_1__["Link"], {
-    to: "/profile/" + props.post.author
-  }, props.users[props.post.author] && props.users[props.post.author].name)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", {
-    className: "timestamp"
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("u", null, " ", timeSince(props.post.timestamp), " ago")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("br", null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("pre", null, props.post.text));
-}
-
-function ProfileWrapper(props) {
-  var _useParams = Object(react_router__WEBPACK_IMPORTED_MODULE_2__["useParams"])(),
-      id = _useParams.id;
-
-  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Profile, {
-    id: id
-  });
-}
-
-var Profile = /*#__PURE__*/function (_React$Component4) {
-  _inherits(Profile, _React$Component4);
-
-  var _super4 = _createSuper(Profile);
-
-  function Profile(props) {
-    var _this9;
-
-    _classCallCheck(this, Profile);
-
-    _this9 = _super4.call(this, props);
-    _this9.state = {
-      id: props.id,
-      user: {},
-      posts: []
-    };
-    _this9.refresh = _this9.refresh.bind(_assertThisInitialized(_this9));
-    return _this9;
-  }
-
-  _createClass(Profile, [{
-    key: "componentDidMount",
-    value: function componentDidMount() {
-      var _this10 = this;
-
-      Axios.get('/api/users/' + this.state.id).then(function (response) {
-        _this10.setState({
-          id: _this10.state.id,
-          user: response.data,
-          posts: _this10.state.posts
-        });
-      });
-      this.refresh();
-    }
-  }, {
-    key: "refresh",
-    value: function refresh() {
-      var _this11 = this;
-
-      Axios.post('/api/posts', {
-        "author": Number(this.state.id)
-      }).then(function (response) {
-        var postData = [];
-        response.data.data && response.data.data.forEach(function (post) {
-          return postData.push(post);
-        });
-
-        _this11.setState({
-          id: _this11.state.id,
-          user: _this11.state.user,
-          posts: postData
-        });
-      });
-    }
-  }, {
-    key: "home",
-    value: function home() {
-      window.location.href = "/";
-    }
-  }, {
-    key: "render",
-    value: function render() {
-      var posts = [];
-      var userData = {};
-      userData[this.state.id] = this.state.user;
-      this.state.posts.forEach(function (p) {
-        return posts.push( /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Post, {
-          key: p.id,
-          post: p,
-          users: userData
-        }));
-      });
-      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-        className: "main"
-      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-        className: "section"
-      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-        className: "button",
-        onClick: logout
-      }, "Logout")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-        className: "center"
-      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-        className: "button",
-        onClick: this.home
-      }, "Home")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-        className: "section"
-      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null, this.state.user && this.state.user.name, "'s Profile")), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(Poster, {
-        refresh: this.refresh
-      }), posts);
-    }
-  }]);
-
-  return Profile;
-}(react__WEBPACK_IMPORTED_MODULE_0___default.a.Component);
-
 function Poster(props) {
   var _useState = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])({}),
       _useState2 = _slicedToArray(_useState, 2),
@@ -32978,14 +33149,28 @@ function Poster(props) {
   function handleSubmit(event) {
     event.preventDefault();
     var text = document.forms[0].text;
-    Axios.post('/api/post/submit', {
-      'data': text.value
-    }).then(function () {
-      setResult({});
-      props.refresh();
-    })["catch"](function (error) {
-      return setResult(error.response.data);
-    });
+
+    if (props.parent) {
+      Axios.post('/api/comment/submit', {
+        'post': Number(props.parent),
+        'data': text.value
+      }).then(function () {
+        setResult({});
+        props.refresh();
+      })["catch"](function (error) {
+        return setResult(error.response.data);
+      });
+    } else {
+      Axios.post('/api/post/submit', {
+        'data': text.value
+      }).then(function () {
+        setResult({});
+        props.refresh();
+      })["catch"](function (error) {
+        return setResult(error.response.data);
+      });
+    }
+
     text.value = "";
   }
 
@@ -33007,11 +33192,13 @@ function Poster(props) {
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("input", {
     className: "button",
     type: "submit",
-    value: "Post"
+    value: props.parent ? "Comment" : "Post"
   }))));
 }
 
 function Login(props) {
+  document.title = "Login";
+
   var _useState3 = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])({}),
       _useState4 = _slicedToArray(_useState3, 2),
       result = _useState4[0],
@@ -33075,6 +33262,8 @@ function Login(props) {
 }
 
 function Register(props) {
+  document.title = "Register";
+
   var _useState5 = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])({}),
       _useState6 = _slicedToArray(_useState5, 2),
       result = _useState6[0],

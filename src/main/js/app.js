@@ -23,6 +23,7 @@ class App extends React.Component {
                 <Routes>
                     <Route path="/" element={<Home />}/>
                     <Route path="/profile/:id" element={<ProfileWrapper />}/>
+                    <Route path="/post/:id" element={<CommentSectionWrapper />}/>
                     <Route path="/login" element={<Login />}/>
                     <Route path="/register" element={<Register />}/>
                 </Routes>
@@ -35,6 +36,27 @@ function logout() {
     Axios.post('/api/user/logout')
         .then(() => window.location.href = "/login")
         .catch(() => window.location.href = "/login")
+}
+
+function timeSince(timestamp) {
+    let date = new Date(timestamp * 1000);
+    let seconds = Math.floor((new Date() - date) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1)
+        return Math.floor(interval) + " years";
+    interval = seconds / 2592000;
+    if (interval > 1)
+        return Math.floor(interval) + " months";
+    interval = seconds / 86400;
+    if (interval > 1)
+        return Math.floor(interval) + " days";
+    interval = seconds / 3600;
+    if (interval > 1)
+        return Math.floor(interval) + " hours";
+    interval = seconds / 60;
+    if (interval > 1)
+        return Math.floor(interval) + " minutes";
+    return Math.floor(seconds) + " seconds";
 }
 
 class Home extends React.Component {
@@ -51,6 +73,7 @@ class Home extends React.Component {
     }
 
     componentDidMount() {
+        document.title = "Home";
         Axios.get('/api/users/self').
         then(response => this.setState({
             self: response.data,
@@ -96,7 +119,7 @@ class Home extends React.Component {
 
     render() {
         let posts = [];
-        this.state.posts.forEach(p => posts.push(<Post key={p.id} post={p} users={this.state.userMap} self={this.state.self} refresh={this.refresh}/>))
+        this.state.posts.forEach(p => posts.push(<Post key={p.id} type="post" post={p} users={this.state.userMap} self={this.state.self} refresh={this.refresh}/>))
         return (
             <div className="main">
                 <div className="section">
@@ -113,6 +136,193 @@ class Home extends React.Component {
             </div>
         )
     }
+}
+
+function ProfileWrapper(props) {
+    const { id } = useParams();
+    return (<Profile id={id}/>)
+}
+
+class Profile extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            self: {},
+            user: {},
+            posts: []
+        };
+        this.refresh = this.refresh.bind(this);
+    }
+
+    componentDidMount() {
+        document.title = "Profile";
+        Axios.get('/api/users/self').
+        then(response => this.setState({
+            self: response.data,
+            user: this.state.user,
+            posts: this.state.posts
+        }))
+        Axios.get('/api/users/' + this.props.id).then(response => {
+            this.setState({
+                user: response.data,
+                posts: this.state.posts
+            });
+        });
+        this.refresh();
+    }
+
+    refresh() {
+        Axios.post('/api/posts', {
+            "author": Number(this.props.id)
+        }).then(response => {
+            let postData = [];
+            response.data.data && response.data.data.forEach(post => postData.push(post));
+            this.setState({
+                user: this.state.user,
+                posts: postData
+            });
+        });
+    }
+
+    home() {
+        window.location.href = "/";
+    }
+
+    render() {
+        let posts = [];
+        let userData = {};
+        userData[this.props.id] = this.state.user;
+        this.state.posts.forEach(p => posts.push(<Post key={p.id} type="post" post={p} users={userData} self={this.state.user} />))
+        return (
+            <div className="main">
+                <div className="section">
+                    <button className="button" onClick={logout}>Logout</button>
+                </div>
+                <div className="center">
+                    <button className="button" onClick={this.home}>Home</button>
+                </div>
+                <div className="section">
+                    <h1>{this.state.user && this.state.user.name}'s Profile</h1>
+                </div>
+                {this.state.self.id === this.state.user.id && <Poster refresh={this.refresh}/>}
+                {posts}
+            </div>
+        )
+    }
+
+}
+
+function CommentSectionWrapper(props) {
+    const { id } = useParams();
+    return (<CommentSection id={id}/>)
+}
+
+class CommentSection extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            comments: [],
+            post: {},
+            self: {},
+            userMap: {}
+        };
+        this.refresh = this.refresh.bind(this);
+    }
+
+    componentDidMount() {
+        document.title = "Comments";
+        Axios.get('/api/users/self').
+        then(response => {
+            this.setState({
+                comments: this.state.comments,
+                post: this.state.posts,
+                self: response.data,
+                userMap: this.state.userMap
+            });
+            Axios.get('/api/posts/' + Number(this.props.id)).
+            then(response => {
+                this.setState({
+                    comments: this.state.comments,
+                    post: response.data,
+                    self: this.state.self,
+                    userMap: this.state.userMap
+                });
+                this.refresh();
+            }).
+            catch(() => window.location.href = "/");
+        }).
+        catch(() => window.location.href = "/login");
+    }
+
+    refresh() {
+        Axios.post('/api/comments', {
+            'post': Number(this.props.id)
+        }).then(response => {
+            let commentData = [];
+            let map = {};
+            let cache = [];
+            this.state.post && Axios.get('/api/users/' + this.state.post.author).then(res => {
+                map[this.state.post.author] = res.data;
+                this.setState({
+                    comments: this.state.comments,
+                    post: this.state.post,
+                    self: this.state.self,
+                    userMap: map
+                });
+                response.data.data && response.data.data.forEach(comment => {
+                    let authorId = comment.author;
+                    if (!this.state.userMap[authorId] && !cache.includes(authorId)) {
+                        cache.push(authorId);
+                        Axios.get('/api/users/' + authorId).then(r => {
+                            let user = r.data;
+                            map[user.id] = user;
+                            this.setState({
+                                comments: this.state.comments,
+                                post: this.state.post,
+                                self: this.state.self,
+                                userMap: map
+                            });
+                        })
+                    }
+                    commentData.push(comment);
+                });
+                this.setState({
+                    comments: commentData,
+                    post: this.state.post,
+                    self: this.state.self,
+                    userMap: this.state.userMap
+                });
+            });
+        });
+    }
+
+    home() {
+        window.location.href = "/";
+    }
+
+    render() {
+        let comments = [];
+        this.state.comments.forEach(p => comments.push(<Post key={p.id} type="comment" post={p} users={this.state.userMap} self={this.state.self} refresh={this.refresh}/>))
+        return (
+            <div className="main">
+                <div className="section">
+                    <button className="button" onClick={logout}>Logout</button>
+                </div>
+                <div className="center">
+                    <button className="button" onClick={this.home}>Home</button>
+                </div>
+                <div className="section">
+                    <h1>Comments</h1>
+                </div>
+                {this.state.post && this.state.self && <Post key="parent" parent={true} type="post" post={this.state.post} users={this.state.userMap} self={this.state.self} refresh={this.refresh} />}
+                <Poster parent={this.props.id} refresh={this.refresh}/>
+                {comments}
+            </div>
+        )
+    }
+
 }
 
 class Post extends React.Component {
@@ -136,8 +346,8 @@ class Post extends React.Component {
 
     submitEdit(event) {
         event.preventDefault();
-        let {text} = document.forms["post_" + this.props.post.id];
-        Axios.post('/api/post/edit', {
+        let {text} = document.forms["post_" + this.props.type + "_" + this.props.post.id];
+        Axios.post('/api/' + this.props.type + '/edit', {
             'data': text.value,
             'id': this.props.post.id
         }).then(() => {
@@ -150,7 +360,7 @@ class Post extends React.Component {
 
     delete(event) {
         event.preventDefault();
-        Axios.post('/api/post/delete/' + this.props.post.id).then(() => this.props.refresh());
+        Axios.get('/api/' + this.props.type + '/delete/' + this.props.post.id).then(() => this.props.refresh());
     }
 
     componentDidMount() {
@@ -161,10 +371,13 @@ class Post extends React.Component {
         if (!this.state.edit)
             return (
                 <div className="post">
-                    <PostDisplay post={this.props.post} users={this.props.users}/>
+                    <strong><Link to={"/profile/" + this.props.post.author}>{this.props.users[this.props.post.author] && this.props.users[this.props.post.author].name}</Link></strong>
+                    <span className="timestamp"><u>{timeSince(this.props.post.timestamp)} ago</u></span>
+                    <br/>
+                    <pre>{this.props.post.text}</pre>
                     <p/>
                     <div className="options">
-                        <a className="comments" href="#">Comments</a>
+                        {(this.props.type === "post" && !this.props.parent) && <Link to={"/post/" + this.props.post.id}>Comments</Link>}
                         {(this.props.self && this.props.self.id === this.props.post.author) &&
                         <a className="edit" href="#" onClick={this.toggleEdit}>Edit</a>}
                         {(this.props.self && (this.props.self.admin || this.props.self.id === this.props.post.author)) &&
@@ -175,7 +388,7 @@ class Post extends React.Component {
         else
             return (
                 <div className="post">
-                    <form name={"post_" + this.props.post.id} onSubmit={this.submitEdit}>
+                    <form name={"post_" + this.props.type + "_" + this.props.post.id} onSubmit={this.submitEdit}>
                         <textarea name="text" rows="10" cols="157" defaultValue={this.props.post.text}/>
                         <p/>
                         <input className="button" type="submit" value="Finish"/>
@@ -189,109 +402,6 @@ class Post extends React.Component {
 
 }
 
-function PostDisplay(props) {
-
-    function timeSince(timestamp) {
-        let date = new Date(timestamp * 1000);
-        let seconds = Math.floor((new Date() - date) / 1000);
-        let interval = seconds / 31536000;
-        if (interval > 1)
-            return Math.floor(interval) + " years";
-        interval = seconds / 2592000;
-        if (interval > 1)
-            return Math.floor(interval) + " months";
-        interval = seconds / 86400;
-        if (interval > 1)
-            return Math.floor(interval) + " days";
-        interval = seconds / 3600;
-        if (interval > 1)
-            return Math.floor(interval) + " hours";
-        interval = seconds / 60;
-        if (interval > 1)
-            return Math.floor(interval) + " minutes";
-        return Math.floor(seconds) + " seconds";
-    }
-
-    return (
-        <div>
-            <strong><Link to={"/profile/" + props.post.author}>{props.users[props.post.author] && props.users[props.post.author].name}</Link></strong>
-            <span className="timestamp"><u> {timeSince(props.post.timestamp)} ago</u></span>
-            <br/>
-            <pre>{props.post.text}</pre>
-        </div>
-    )
-}
-
-function ProfileWrapper(props) {
-    const { id } = useParams();
-    return (<Profile id={id}/>)
-}
-
-class Profile extends React.Component {
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            id: props.id,
-            user: {},
-            posts: []
-        };
-        this.refresh = this.refresh.bind(this);
-    }
-
-    componentDidMount() {
-        Axios.get('/api/users/' + this.state.id).then(response => {
-            this.setState({
-                id: this.state.id,
-                user: response.data,
-                posts: this.state.posts
-            });
-        });
-        this.refresh();
-    }
-
-    refresh() {
-        Axios.post('/api/posts', {
-            "author": Number(this.state.id)
-        }).then(response => {
-            let postData = [];
-            response.data.data && response.data.data.forEach(post => postData.push(post));
-            this.setState({
-                id: this.state.id,
-                user: this.state.user,
-                posts: postData
-            });
-        });
-    }
-
-    home() {
-        window.location.href = "/";
-    }
-
-    render() {
-        let posts = [];
-        let userData = {};
-        userData[this.state.id] = this.state.user;
-        this.state.posts.forEach(p => posts.push(<Post key={p.id} post={p} users={userData}/>))
-        return (
-            <div className="main">
-                <div className="section">
-                    <button className="button" onClick={logout}>Logout</button>
-                </div>
-                <div className="center">
-                    <button className="button" onClick={this.home}>Home</button>
-                </div>
-                <div className="section">
-                    <h1>{this.state.user && this.state.user.name}'s Profile</h1>
-                </div>
-                <Poster refresh={this.refresh}/>
-                {posts}
-            </div>
-        )
-    }
-
-}
-
 function Poster(props) {
 
     const [result, setResult] = useState({});
@@ -299,12 +409,22 @@ function Poster(props) {
     function handleSubmit(event) {
         event.preventDefault();
         let {text} = document.forms[0];
-        Axios.post('/api/post/submit', {
-            'data': text.value
-        }).then(() => {
-            setResult({});
-            props.refresh();
-        }).catch(error => setResult(error.response.data));
+        if (props.parent) {
+            Axios.post('/api/comment/submit', {
+                'post': Number(props.parent),
+                'data': text.value
+            }).then(() => {
+                setResult({});
+                props.refresh();
+            }).catch(error => setResult(error.response.data));
+        } else {
+            Axios.post('/api/post/submit', {
+                'data': text.value
+            }).then(() => {
+                setResult({});
+                props.refresh();
+            }).catch(error => setResult(error.response.data));
+        }
         text.value = "";
     }
 
@@ -319,7 +439,7 @@ function Poster(props) {
                 </div>
                 <div className="center">
                     <p />
-                    <input className="button" type="submit" value="Post"/>
+                    <input className="button" type="submit" value={props.parent ? "Comment" : "Post"}/>
                 </div>
             </form>
         </div>
@@ -328,6 +448,8 @@ function Poster(props) {
 }
 
 function Login(props) {
+
+    document.title = "Login";
 
     const [result, setResult] = useState({});
 
@@ -377,6 +499,8 @@ function Login(props) {
 }
 
 function Register(props) {
+
+    document.title = "Register";
 
     const [result, setResult] = useState({});
 

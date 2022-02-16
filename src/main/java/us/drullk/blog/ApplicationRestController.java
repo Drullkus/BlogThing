@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import us.drullk.blog.comment.Comment;
+import us.drullk.blog.comment.ICommentService;
 import us.drullk.blog.post.IPostService;
 import us.drullk.blog.post.Post;
 import us.drullk.blog.user.IUserService;
@@ -37,11 +39,13 @@ public class ApplicationRestController {
 
 	private final IUserService userService;
 	private final IPostService postService;
+	private final ICommentService commentService;
 
 	@Autowired
-	public ApplicationRestController(IUserService userService, IPostService postService) {
+	public ApplicationRestController(IUserService userService, IPostService postService, ICommentService commentService) {
 		this.userService = userService;
 		this.postService = postService;
+		this.commentService = commentService;
 	}
 
 	/**
@@ -180,7 +184,7 @@ public class ApplicationRestController {
 	 * Get a Post by its ID
 	 * Output: Post object
 	 */
-	@PostMapping("/api/posts/{id}")
+	@GetMapping("/api/posts/{id}")
 	public ResponseEntity<Post> getPost(@PathVariable Integer id) {
 		return postService.get(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
 	}
@@ -213,8 +217,8 @@ public class ApplicationRestController {
 	 * Requires a Session Cookie
 	 * Output: [String success] or [String error]
 	 */
-	@PostMapping("/api/post/delete/{id}")
-	public ResponseEntity<?> editPost(HttpServletRequest request, @PathVariable Integer id) {
+	@GetMapping("/api/post/delete/{id}")
+	public ResponseEntity<?> deletePost(HttpServletRequest request, @PathVariable Integer id) {
 		return ApplicationController.getSessionUser(request, userService).map(user -> postService.get(id).map(post -> {
 			if (user.getAdmin() || post.getAuthor().equals(user.getId())) {
 				postService.delete(id);
@@ -222,6 +226,108 @@ public class ApplicationRestController {
 			}
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Access Denied"));
 		}).orElse(ResponseEntity.badRequest().body(jsonObject().put("error", "Post doesn't exist!")))).
+				orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Not Logged In!")));
+	}
+
+	/**
+	 * Get Comments sorted by timestamp descending
+	 * Input: [Integer post, Optional Integer author, Optional Integer page (>= 0), Optional Integer size (> 0, <= 50))]
+	 * Output: [Integer page, Integer size, Integer pages, List Comment data]
+	 */
+	@PostMapping("/api/comments")
+	public ResponseEntity<Object> getComments(@RequestBody JsonNode body) {
+		JsonNode post = body.get("post");
+		JsonNode author = body.get("author");
+		JsonNode page = body.get("page");
+		JsonNode size = body.get("size");
+		if (post == null || !post.isInt())
+			return ResponseEntity.badRequest().body(jsonObject().put("error", "post must be an integer"));
+		return  postService.get(post.asInt()).map(parent -> {
+			int p = page == null || !page.isInt() || page.asInt() < 0 ? 0 : page.asInt();
+			int s = size == null || !size.isInt() || size.asInt() <= 0 || size.asInt() > 50 ? 50 : size.asInt();
+			Sort sort = Sort.by(Sort.Direction.DESC, "timestamp");
+			Page<Comment> comment = author != null && author.isInt() ?
+
+					commentService.findForPostAndAuthor(parent, author.asInt(), p, s, sort) :
+
+					commentService.findForPost(parent, p, s, sort);
+			ArrayNode nodes = JsonNodeFactory.instance.arrayNode();
+			comment.toList().forEach(data -> nodes.add(new ObjectMapper().valueToTree(data)));
+			return ResponseEntity.ok(jsonObject().
+					put("page", p).
+					put("size", s).
+					put("pages", comment.getTotalPages()).
+					set("data", nodes));
+		}).orElse(ResponseEntity.badRequest().body(jsonObject().put("error", "Invalid Post")));
+	}
+
+	/**
+	 * Submit a Comment
+	 * Requires a Session Cookie
+	 * Input: [Integer post, String data]
+	 * Output: [Comment data]
+	 */
+	@PostMapping("/api/comment/submit")
+	public ResponseEntity<?> addComment(HttpServletRequest request, @RequestBody JsonNode body) {
+		return ApplicationController.getSessionUser(request, userService).map(user -> {
+			JsonNode post = body.get("post");
+			if (post == null || !post.isInt())
+				return ResponseEntity.badRequest().body(jsonObject().put("error", "post must be an integer"));
+			JsonNode text = body.get("data");
+			if (text == null || !text.isTextual() || text.asText().isEmpty())
+				return ResponseEntity.badRequest().body(jsonObject().put("error", "No Text"));
+			return postService.get(post.asInt()).map(parent ->
+					ResponseEntity.ok(jsonObject().set("data", new ObjectMapper().valueToTree(commentService.create(parent, user.getId(), text.asText()))))
+			).orElse(ResponseEntity.badRequest().body(jsonObject().put("error", "Invalid Post")));
+		}).orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Not Logged In!")));
+	}
+
+	/**
+	 * Get a Comment by its ID
+	 * Output: Comment object
+	 */
+	@GetMapping("/api/comments/{id}")
+	public ResponseEntity<Comment> getComment(@PathVariable Integer id) {
+		return commentService.get(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
+	}
+
+	/**
+	 * Edit a Comment
+	 * Requires a Session Cookie
+	 * Input: [String data, Integer id]
+	 * Output: [Comment data] or [String error]
+	 */
+	@PostMapping("/api/comment/edit")
+	public ResponseEntity<?> editComment(HttpServletRequest request, @RequestBody JsonNode body) {
+		return ApplicationController.getSessionUser(request, userService).map(user -> {
+			JsonNode text = body.get("data");
+			JsonNode id = body.get("id");
+			if (text == null || !text.isTextual() || text.asText().isEmpty())
+				return ResponseEntity.badRequest().body(jsonObject().put("error", "No Text"));
+			if (id == null || !id.isInt())
+				return ResponseEntity.badRequest().body(jsonObject().put("error", "Invalid ID"));
+			return commentService.get(id.asInt()).map(comment -> {
+				if (comment.getAuthor().equals(user.getId()))
+					return ResponseEntity.ok(jsonObject().set("data", new ObjectMapper().valueToTree(commentService.edit(comment, text.asText()))));
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Access Denied"));
+			}).orElse(ResponseEntity.badRequest().body(jsonObject().put("error", "Comment doesn't exist!")));
+		}).orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Not Logged In!")));
+	}
+
+	/**
+	 * Delete a Comment
+	 * Requires a Session Cookie
+	 * Output: [String success] or [String error]
+	 */
+	@GetMapping("/api/comment/delete/{id}")
+	public ResponseEntity<?> deleteComment(HttpServletRequest request, @PathVariable Integer id) {
+		return ApplicationController.getSessionUser(request, userService).map(user -> commentService.get(id).map(comment -> {
+			if (user.getAdmin() || comment.getAuthor().equals(user.getId()) || comment.getParent().getAuthor().equals(user.getId())) {
+				commentService.delete(id);
+				return ResponseEntity.ok(jsonObject().put("success", "Comment Deleted!"));
+			}
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Access Denied"));
+		}).orElse(ResponseEntity.badRequest().body(jsonObject().put("error", "Comment doesn't exist!")))).
 				orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(jsonObject().put("error", "Not Logged In!")));
 	}
 
