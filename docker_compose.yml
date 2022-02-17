@@ -30,6 +30,8 @@ services:
       #  Also Use same env vars for POSTGRES_USER & POSTGRES_PASSWORD once above is resolved
       - SPRING_DATASOURCE_USERNAME=compose-postgres
       - SPRING_DATASOURCE_PASSWORD=compose-postgres
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
 
 secrets:
   db_unlock_username:
