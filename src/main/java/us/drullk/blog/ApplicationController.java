@@ -31,10 +31,11 @@ public class ApplicationController {
 		this.userService = userService;
 	}
 
-	@RequestMapping({"index", "/", "/register", "/login", "/profile/{id}", "post/{id}"})
+	@RequestMapping({"", "/", "/register", "/login", "/profile/{id}", "/post/{id}"})
 	public String index(HttpServletRequest request, HttpServletResponse response) {
-		if (request.getCookies() != null && getSessionUser(request, userService).isEmpty())
+		if (request.getCookies() != null && getSessionUser(request, userService).isEmpty()) {
 			killSession(response, userService, Optional.empty()); // Nuke the cookie if the session is invalid
+		}
 		return "index";
 	}
 
@@ -72,6 +73,8 @@ public class ApplicationController {
 		response.addCookie(cookie);
 		user.ifPresent(u -> service.updateSession(u, null));
 	}
+
+
 
 	@GetMapping("/oauth/github")
 	public String oauthGithub(HttpServletResponse response, @RequestParam String code) {
