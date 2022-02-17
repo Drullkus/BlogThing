@@ -74,11 +74,9 @@ public class ApplicationController {
 		user.ifPresent(u -> service.updateSession(u, null));
 	}
 
-
-
 	@GetMapping("/oauth/github")
 	public String oauthGithub(HttpServletResponse response, @RequestParam String code) {
-		JsonNode data = restService.post("https://github.com/login/oauth/access_token", headers -> {}, JsonNodeFactory.instance.objectNode().
+		JsonNode data = restService.post("https://github.com/login/oauth/access_token/", headers -> {}, JsonNodeFactory.instance.objectNode().
 				put("code", code).
 				put("client_id", System.getenv("GITHUB_CLIENT_ID")).
 				put("client_secret", System.getenv("GITHUB_CLIENT_SECRET")).
