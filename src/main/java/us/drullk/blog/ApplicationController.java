@@ -31,7 +31,7 @@ public class ApplicationController {
 		this.userService = userService;
 	}
 
-	@RequestMapping({"/", "/register", "/login", "/profile/{id}", "post/{id}"})
+	@RequestMapping({"", "/", "/register", "/login", "/profile/{id}", "post/{id}"})
 	public String index(HttpServletRequest request, HttpServletResponse response) {
 		if (getSessionUser(request, userService).isEmpty())
 			killSession(response, userService, Optional.empty()); // Nuke the cookie if the session is invalid
@@ -79,7 +79,7 @@ public class ApplicationController {
 				put("code", code).
 				put("client_id", System.getenv("GITHUB_CLIENT_ID")).
 				put("client_secret", System.getenv("GITHUB_CLIENT_SECRET")).
-				put("redirect_uri", "http://localhost:8080/oauth/github"));
+				put("redirect_uri", "http://137.184.125.125:8080/oauth/github"));
 		final String token = data.get("access_token").asText();
 		JsonNode github = restService.post("https://api.github.com/user", headers -> headers.add("Authorization", "token " + token), JsonNodeFactory.instance.objectNode());
 		String email = github.get("email").isNull() ? null : github.get("email").asText();
