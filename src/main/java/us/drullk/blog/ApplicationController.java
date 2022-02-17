@@ -31,7 +31,7 @@ public class ApplicationController {
 		this.userService = userService;
 	}
 
-	@RequestMapping({"", "/", "/register", "/login", "/profile/{id}", "/post/{id}"})
+	@RequestMapping({"", "/", "/register", "/login", "/profile/{id}", "/post/{id}"}) // There's def a better way to do this, but for a small project like this, it's not a real worry
 	public String index(HttpServletRequest request, HttpServletResponse response) {
 		if (request.getCookies() != null && getSessionUser(request, userService).isEmpty()) {
 			killSession(response, userService, Optional.empty()); // Nuke the cookie if the session is invalid
@@ -46,7 +46,6 @@ public class ApplicationController {
 
 	/**
 	 * We use a cookie instead of a session so it persists when the App restarts, basically just easier in-dev testing of things. Don't ever do this on a real App.<br>
-	 * Since we're using cookies, we take advantage of this in the frontend to see if we're logged in or not.<br>
 	 * {@link ApplicationController#index(HttpServletRequest, HttpServletResponse)} will invalidate the cookie for us if need be.
 	 */
 	public static String newSession(HttpServletResponse response) {
