@@ -39,7 +39,7 @@ public class ApplicationController {
 	}
 
 	public static Optional<User> getSessionUser(HttpServletRequest request, IUserService service) {
-		return Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("session")).findAny().
+		return request.getCookies() == null ? Optional.empty() : Arrays.stream(request.getCookies()).filter(cookie -> cookie.getName().equals("session")).findAny().
 				flatMap(cookie -> service.getUserFromSession(cookie.getValue()));
 	}
 
