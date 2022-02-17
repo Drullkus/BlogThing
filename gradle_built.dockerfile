@@ -2,7 +2,7 @@
 FROM openjdk:17 AS TEMP_BUILD_IMAGE
 ENV APP_HOME=/usr/app/
 WORKDIR $APP_HOME
-COPY build.gradle settings.gradle gradlew $APP_HOME
+COPY build.gradle settings.gradle gradlew .env $APP_HOME
 COPY gradle $APP_HOME/gradle
 COPY . $APP_HOME
 RUN ./gradlew build --no-watch-fs
