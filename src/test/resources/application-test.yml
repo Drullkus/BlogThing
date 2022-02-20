@@ -1,0 +1,25 @@
+spring:
+  main:
+    banner-mode: off
+  jpa:
+    show-sql: true
+    generate-ddl: true
+    database: h2
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  sql:
+    init:
+      schema-locations: classpath*:db/schema.sql
+      data-locations: classpath*:db/data.sql
+      mode: always
+      platform: h2
+  datasource:
+    url: jdbc:h2:mem:db;DB_CLOSE_DELAY=-1
+    username: sa
+    password: sa
+    driver-class-name: org.h2.Driver
