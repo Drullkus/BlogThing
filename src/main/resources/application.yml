@@ -6,7 +6,7 @@ spring:
     generate-ddl: true
     database: POSTGRESQL
     hibernate:
-      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      ddl-auto: ${BLOG_SPRING_JPA_HIBERNATE_DDL_AUTO}
     properties:
       hibernate:
         jdbc:
@@ -17,7 +17,7 @@ spring:
       mode: always
       platform: postgres
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${BLOG_SPRING_DATASOURCE_URL}
+    username: ${BLOG_SPRING_DATASOURCE_USERNAME}
+    password: ${BLOG_SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver # Inclusion ensures the JUnit test passes https://stackoverflow.com/a/31781524

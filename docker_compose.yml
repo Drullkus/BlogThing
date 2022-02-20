@@ -22,14 +22,14 @@ services:
     depends_on:
       - db
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/compose-postgres
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - BLOG_SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/compose-postgres
+      - BLOG_SPRING_JPA_HIBERNATE_DDL_AUTO=update
       # Using file contents for passwords instead of direct variables is a feature
       # for Databases apparently, and is not a standardized expectation
       # TODO Below info should be set for environment variables (SPRING_DATASOURCE_USERNAME & SPRING_DATASOURCE_PASSWORD)
       #  Also Use same env vars for POSTGRES_USER & POSTGRES_PASSWORD once above is resolved
-      - SPRING_DATASOURCE_USERNAME=compose-postgres
-      - SPRING_DATASOURCE_PASSWORD=compose-postgres
+      - BLOG_SPRING_DATASOURCE_USERNAME=compose-postgres
+      - BLOG_SPRING_DATASOURCE_PASSWORD=compose-postgres
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
 
