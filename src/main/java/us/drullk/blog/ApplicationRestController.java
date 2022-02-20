@@ -159,7 +159,7 @@ public class ApplicationRestController {
 		post.toList().forEach(data -> nodes.add(new ObjectMapper().valueToTree(data)));
 		return ResponseEntity.ok(jsonObject().
 				put("page", p).
-				put("size", s).
+				put("size", post.getTotalElements()).
 				put("pages", post.getTotalPages()).
 				set("data", nodes));
 	}
@@ -255,7 +255,7 @@ public class ApplicationRestController {
 			comment.toList().forEach(data -> nodes.add(new ObjectMapper().valueToTree(data)));
 			return ResponseEntity.ok(jsonObject().
 					put("page", p).
-					put("size", s).
+					put("size", comment.getTotalElements()).
 					put("pages", comment.getTotalPages()).
 					set("data", nodes));
 		}).orElse(ResponseEntity.badRequest().body(jsonObject().put("error", "Invalid Post")));
